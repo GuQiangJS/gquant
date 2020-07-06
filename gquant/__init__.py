@@ -315,3 +315,10 @@ class MetricsUtils():
 
         if start and end:
             fig.suptitle('测试时段:{}~{}'.format(start, end))
+
+class Indicator():
+    def calc_sar(DataFrame, acceleration=0, maximum=0):
+        """使用talib计算sar，即透传talib.SAR计算结果
+        """
+        res = talib.SAR(DataFrame.high.values, DataFrame.low.values, acceleration, maximum)
+        return pd.DataFrame({'SAR': res}, index=DataFrame.index)
