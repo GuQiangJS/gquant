@@ -253,6 +253,38 @@ class SellStrategy_ATR(abupy.AbuFactorSellBase):
                 self.sell_tomorrow(order)
 
 
+class AbuAtrPosition(abupy.BetaBu.ABuAtrPosition):
+    """atr仓位管理。派生自:py:class`abupy.BetaBu.ABuAtrPosition`。因为原本无法指定atr数据来源。"""
+
+    def _init_self(self, **kwargs):
+        super()._init_self(**kwargs)
+        self.atr=kwargs.pop('atr','atr21')
+
+    def fit_position(self, factor_object):
+        """
+        fit_position计算的结果是买入多少个单位（股，手，顿，合约）
+        计算：（常数价格 ／ 买入价格）＊ 当天交易日atr21
+        :param factor_object: ABuFactorBuyBases实例对象
+        :return:买入多少个单位（股，手，顿，合约）
+        """
+        if self.atr not in self.kl_pd_buy.columns:
+            raise ValueError()
+        std_atr = (AbuAtrPosition.s_atr_base_price / self.bp) * self.kl_pd_buy[self.atr]
+
+        """
+            对atr 进行限制 避免由于股价波动过小，导致
+            atr小，产生大量买单，实际上针对这种波动异常（过小，过大）的股票
+            需要有其它的筛选过滤策略, 选股的时候取0.5，这样最大取两倍g_atr_pos_base
+        """
+        atr_wv = AbuAtrPosition.s_std_atr_threshold if std_atr < AbuAtrPosition.s_std_atr_threshold else std_atr
+        # 计算出仓位比例
+        atr_pos = g_atr_pos_base / atr_wv
+        # 最大仓位限制
+        atr_pos = ABuPositionBase.g_pos_max if atr_pos > ABuPositionBase.g_pos_max else atr_pos
+        # 结果是买入多少个单位（股，手，顿，合约）
+        return self.read_cash * atr_pos / self.bp * self.deposit_rate
+
+
 class MetricsUtils():
     def plot_all(metrics, **kwargs):
         """绘图
