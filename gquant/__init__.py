@@ -130,10 +130,10 @@ class SellStrategy_TDTP(abupy.AbuFactorSellXD):
         self.factor_name = '{}:{}:xd={}'.format(
             self.__class__.__name__, self.price, self.xd)
 
-    def fit_day(self, today):
+    def fit_day(self, today, orders):
         if today[self.price] < self.xd_kl[self.price].max():
-            return self.buy_tomorrow()
-        return None
+            for order in orders:
+                self.sell_tomorrow(order)
 
 
 class SellStrategy_NDay(abupy.AbuFactorSellBase):
@@ -159,7 +159,12 @@ class SellStrategy_NDay(abupy.AbuFactorSellBase):
         for order in orders:
             # 将单子的持有天数进行增加
             order.keep_days += 1
-            if order.keep_days >= self.sell_n and order.buy_price >= today[self.price]:
+            """
+                today.close - order.buy_price：截止今天相比买入时的收益，
+                order.expect_direction：买单的方向，收益＊方向＝实际收益
+            """
+            profit = (today.close - order.buy_price) * order.expect_direction
+            if order.keep_days >= self.sell_n and profit<=0:
                 # 超过self.sell_n，并且当前价格<=买入价格，即卖出
                 self.sell_tomorrow(order)
 
