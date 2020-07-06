@@ -225,6 +225,11 @@ class SellStrategy_ATR(abupy.AbuFactorSellBase):
 
         self.atr = kwargs['atr']
 
+
+    def support_direction(self):
+        """因子支持两个方向"""
+        return [ESupportDirection.DIRECTION_CAll.value, ESupportDirection.DIRECTION_PUT.value]
+        
     def fit_day(self, today, orders):
         """
         止盈event：截止今天相比买入时的收益 * 买入时的期望方向 > n倍atr
