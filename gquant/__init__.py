@@ -82,7 +82,7 @@ class SellStrategy_SAR(abupy.AbuFactorSellBase):
 
     def support_direction(self):
         """支持的方向，只支持正向"""
-        return [ESupportDirection.DIRECTION_CAll.value]
+        return [abupy.ESupportDirection.DIRECTION_CAll.value]
 
     def fit_day(self, today, orders):
         if today[self.sar] >= today[self.price]:
@@ -162,7 +162,7 @@ class SellStrategy_TDTP(abupy.AbuFactorSellXD):
 
     def support_direction(self):
         """支持的方向，只支持正向"""
-        return [ESupportDirection.DIRECTION_CAll.value]
+        return [abupy.ESupportDirection.DIRECTION_CAll.value]
 
     def fit_day(self, today, orders):
         if today[self.price] < self.xd_kl[self.price].max():
@@ -187,7 +187,7 @@ class SellStrategy_NDay(abupy.AbuFactorSellBase):
 
     def support_direction(self):
         """支持的方向，只支持正向"""
-        return [ESupportDirection.DIRECTION_CAll.value]
+        return [abupy.ESupportDirection.DIRECTION_CAll.value]
 
     def fit_day(self, today, orders):
         for order in orders:
@@ -231,7 +231,7 @@ class SellStrategy_ATR(abupy.AbuFactorSellBase):
 
     def support_direction(self):
         """支持的方向，只支持正向"""
-        return [ESupportDirection.DIRECTION_CAll.value]
+        return [abupy.ESupportDirection.DIRECTION_CAll.value]
 
     def fit_day(self, today, orders):
         """
