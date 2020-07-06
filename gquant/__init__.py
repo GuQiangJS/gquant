@@ -90,7 +90,7 @@ class SellStrategy_SAR(abupy.AbuFactorSellBase):
                 self.sell_tomorrow(order)
 
 
-class BuyStrategy_TDTP(abupy.AbuFactorBuyXD):
+class BuyStrategy_TDTP(abupy.AbuFactorBuyXD, abupy.BuyCallMixin):
     """通道突破买入方案。默认使用收盘价作为价格比较列。
     当价格超过`xd`天最高价时，第二日买入。参考:py:class:`abupy.FactorBuyBu.ABuFactorBuyBreak.AbuFactorBuyXD`。（区别在于计算xd_kl时去除当日）"""
 
@@ -99,7 +99,7 @@ class BuyStrategy_TDTP(abupy.AbuFactorBuyXD):
 
         Args:
             today: 当前驱动的交易日金融时间序列数据
-        
+
         Returns:
             生成的交易订单AbuOrder对象
         """
@@ -194,7 +194,7 @@ class SellStrategy_NDay(abupy.AbuFactorSellBase):
                 order.expect_direction：买单的方向，收益＊方向＝实际收益
             """
             profit = (today.close - order.buy_price) * order.expect_direction
-            if order.keep_days >= self.sell_n and profit<=0:
+            if order.keep_days >= self.sell_n and profit <= 0:
                 # 超过self.sell_n，并且当前价格<=买入价格，即卖出
                 self.sell_tomorrow(order)
 
@@ -207,18 +207,21 @@ class SellStrategy_ATR(abupy.AbuFactorSellBase):
         stop_loss_n (float): 止损的atr倍数。
         stop_win_n (float): 止盈的atr倍数。
     """
+
     def _init_self(self, **kwargs):
         if 'stop_loss_n' in kwargs:
             # 设置止损的atr倍数
             self.stop_loss_n = kwargs['stop_loss_n']
             # 在输出生成的orders_pd中及可视化等等显示的名字
-            self.sell_type_extra_loss = '{}:stop_loss={}'.format(self.__class__.__name__, self.stop_loss_n)
+            self.sell_type_extra_loss = '{}:stop_loss={}'.format(
+                self.__class__.__name__, self.stop_loss_n)
 
         if 'stop_win_n' in kwargs:
             # 设置止盈的atr倍数
             self.stop_win_n = kwargs['stop_win_n']
             # 在输出生成的orders_pd中及可视化等等显示的名字
-            self.sell_type_extra_win = '{}:stop_win={}'.format(self.__class__.__name__, self.stop_win_n)
+            self.sell_type_extra_win = '{}:stop_win={}'.format(
+                self.__class__.__name__, self.stop_win_n)
 
         self.atr = kwargs['atr']
 
@@ -258,7 +261,7 @@ class Position_Atr(abupy.AbuPositionBase):
 
     def _init_self(self, **kwargs):
         super()._init_self(**kwargs)
-        self.atr=kwargs.pop('atr','atr21')
+        self.atr = kwargs.pop('atr', 'atr21')
 
     def fit_position(self, factor_object):
         """
@@ -269,7 +272,8 @@ class Position_Atr(abupy.AbuPositionBase):
         """
         if self.atr not in self.kl_pd_buy.columns:
             raise ValueError()
-        std_atr = (AbuAtrPosition.s_atr_base_price / self.bp) * self.kl_pd_buy[self.atr]
+        std_atr = (AbuAtrPosition.s_atr_base_price /
+                   self.bp) * self.kl_pd_buy[self.atr]
 
         """
             对atr 进行限制 避免由于股价波动过小，导致
@@ -385,9 +389,11 @@ class MetricsUtils():
         if start and end:
             fig.suptitle('测试时段:{}~{}'.format(start, end))
 
+
 class Indicator():
     def calc_sar(DataFrame, acceleration=0, maximum=0):
         """使用talib计算sar，即透传talib.SAR计算结果"""
         import talib
-        res = talib.SAR(DataFrame.high.values, DataFrame.low.values, acceleration, maximum)
+        res = talib.SAR(DataFrame.high.values,
+                        DataFrame.low.values, acceleration, maximum)
         return pd.DataFrame({'SAR': res}, index=DataFrame.index)
