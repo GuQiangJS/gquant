@@ -162,7 +162,7 @@ class SellStrategy_NDay(abupy.AbuFactorSellBase):
                 self.sell_tomorrow(order)
 
 
-class SellStrategy_ATR(abupy.FactorSellBu.ABuFactorAtrNStop):
+class SellStrategy_ATR(abupy.AbuFactorSellBase):
     """n倍atr(止盈止损)。派生自:py:class`abupy.FactorSellBu.ABuFactorAtrNStop`。因为原本无法指定atr数据来源。
 
     Args:
@@ -170,9 +170,19 @@ class SellStrategy_ATR(abupy.FactorSellBu.ABuFactorAtrNStop):
         stop_loss_n (float): 止损的atr倍数。
         stop_win_n (float): 止盈的atr倍数。
     """
-
     def _init_self(self, **kwargs):
-        super._init_self(**kwargs)
+        if 'stop_loss_n' in kwargs:
+            # 设置止损的atr倍数
+            self.stop_loss_n = kwargs['stop_loss_n']
+            # 在输出生成的orders_pd中及可视化等等显示的名字
+            self.sell_type_extra_loss = '{}:stop_loss={}'.format(self.__class__.__name__, self.stop_loss_n)
+
+        if 'stop_win_n' in kwargs:
+            # 设置止盈的atr倍数
+            self.stop_win_n = kwargs['stop_win_n']
+            # 在输出生成的orders_pd中及可视化等等显示的名字
+            self.sell_type_extra_win = '{}:stop_win={}'.format(self.__class__.__name__, self.stop_win_n)
+
         self.atr = kwargs['atr']
 
     def fit_day(self, today, orders):
