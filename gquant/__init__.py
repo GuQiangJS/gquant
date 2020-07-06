@@ -318,7 +318,7 @@ class MetricsUtils():
 
 class Indicator():
     def calc_sar(DataFrame, acceleration=0, maximum=0):
-        """使用talib计算sar，即透传talib.SAR计算结果
-        """
+        """使用talib计算sar，即透传talib.SAR计算结果"""
+        import talib
         res = talib.SAR(DataFrame.high.values, DataFrame.low.values, acceleration, maximum)
         return pd.DataFrame({'SAR': res}, index=DataFrame.index)
