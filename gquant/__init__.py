@@ -253,8 +253,8 @@ class SellStrategy_ATR(abupy.AbuFactorSellBase):
                 self.sell_tomorrow(order)
 
 
-class AbuAtrPosition(abupy.BetaBu.ABuAtrPosition):
-    """atr仓位管理。派生自:py:class`abupy.BetaBu.ABuAtrPosition`。因为原本无法指定atr数据来源。"""
+class Position_Atr(abupy.AbuPositionBase):
+    """atr仓位管理。复制并改写自:py:class`abupy.BetaBu.ABuAtrPosition`。因为原本无法指定atr数据来源。"""
 
     def _init_self(self, **kwargs):
         super()._init_self(**kwargs)
