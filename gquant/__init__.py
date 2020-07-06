@@ -82,7 +82,7 @@ class SellStrategy_SAR(abupy.AbuFactorSellBase):
 
     def support_direction(self):
         """支持的方向，只支持正向"""
-        return [abupy.FactorSellBu.ESupportDirection.DIRECTION_CAll.value]
+        return [ESupportDirection.DIRECTION_CAll.value]
 
     def fit_day(self, today, orders):
         if today[self.sar] >= today[self.price]:
@@ -160,6 +160,10 @@ class SellStrategy_TDTP(abupy.AbuFactorSellXD):
         self.factor_name = '{}:{}:xd={}'.format(
             self.__class__.__name__, self.price, self.xd)
 
+    def support_direction(self):
+        """支持的方向，只支持正向"""
+        return [ESupportDirection.DIRECTION_CAll.value]
+
     def fit_day(self, today, orders):
         if today[self.price] < self.xd_kl[self.price].max():
             for order in orders:
@@ -182,8 +186,8 @@ class SellStrategy_NDay(abupy.AbuFactorSellBase):
             self.__class__.__name__, self.sell_n)
 
     def support_direction(self):
-        """因子支持两个方向"""
-        return [ESupportDirection.DIRECTION_CAll.value, ESupportDirection.DIRECTION_PUT.value]
+        """支持的方向，只支持正向"""
+        return [ESupportDirection.DIRECTION_CAll.value]
 
     def fit_day(self, today, orders):
         for order in orders:
@@ -225,11 +229,10 @@ class SellStrategy_ATR(abupy.AbuFactorSellBase):
 
         self.atr = kwargs['atr']
 
-
     def support_direction(self):
-        """因子支持两个方向"""
-        return [ESupportDirection.DIRECTION_CAll.value, ESupportDirection.DIRECTION_PUT.value]
-        
+        """支持的方向，只支持正向"""
+        return [ESupportDirection.DIRECTION_CAll.value]
+
     def fit_day(self, today, orders):
         """
         止盈event：截止今天相比买入时的收益 * 买入时的期望方向 > n倍atr
