@@ -300,6 +300,12 @@ class Position_Atr(abupy.AbuPositionBase):
         return self.read_cash * atr_pos / self.bp * self.deposit_rate
 
 
+class Position_AllIn(abupy.AbuPositionBase):
+    """全仓"""
+
+    def fit_position(self, factor_object):
+        return self.read_cash / self.bp
+
 class MetricsUtils():
     def plot_all(metrics, **kwargs):
         """绘图
