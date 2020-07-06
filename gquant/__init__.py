@@ -92,7 +92,36 @@ class SellStrategy_SAR(abupy.AbuFactorSellBase):
 
 class BuyStrategy_TDTP(abupy.AbuFactorBuyXD):
     """通道突破买入方案。默认使用收盘价作为价格比较列。
-    当价格超过`xd`天最高价时，第二日买入。参考:py:class:`abupy.FactorBuyBu.ABuFactorBuyBreak.AbuFactorBuyXDBK`。"""
+    当价格超过`xd`天最高价时，第二日买入。参考:py:class:`abupy.FactorBuyBu.ABuFactorBuyBreak.AbuFactorBuyXD`。（区别在于计算xd_kl时去除当日）"""
+
+    def read_fit_day(self, today):
+        """覆盖base函数完成过滤统计周期内前xd天以及为fit_day中切片周期金融时间序列数据
+
+        Args:
+            today: 当前驱动的交易日金融时间序列数据
+        
+        Returns:
+            生成的交易订单AbuOrder对象
+        """
+        if self.skip_days > 0:
+            self.skip_days -= 1
+            return None
+
+        # 今天这个交易日在整个金融时间序列的序号
+        self.today_ind = int(today.key)
+        # 回测中默认忽略最后一个交易日
+        if self.today_ind >= self.kl_pd.shape[0] - 1:
+            return None
+
+        # 忽略不符合买入的天（统计周期内前xd天）
+        # 去除当日
+        if self.today_ind < self.xd:
+            return None
+
+        # 完成为fit_day中切片周期金融时间序列数据
+        self.xd_kl = self.kl_pd[self.today_ind - self.xd + 1:self.today_ind + 1]
+
+        return self.fit_day(today)
 
     def _init_self(self, **kwargs):
         """
