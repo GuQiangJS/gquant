@@ -282,7 +282,7 @@ class Position_Atr(abupy.AbuPositionBase):
         """
         if self.atr not in self.kl_pd_buy:
             raise ValueError()
-        std_atr = (AbuAtrPosition.s_atr_base_price /
+        std_atr = (abupy.AbuAtrPosition.s_atr_base_price /
                    self.bp) * self.kl_pd_buy[self.atr]
 
         """
@@ -290,11 +290,11 @@ class Position_Atr(abupy.AbuPositionBase):
             atr小，产生大量买单，实际上针对这种波动异常（过小，过大）的股票
             需要有其它的筛选过滤策略, 选股的时候取0.5，这样最大取两倍g_atr_pos_base
         """
-        atr_wv = AbuAtrPosition.s_std_atr_threshold if std_atr < AbuAtrPosition.s_std_atr_threshold else std_atr
+        atr_wv = abupy.AbuAtrPosition.s_std_atr_threshold if std_atr < abupy.AbuAtrPosition.s_std_atr_threshold else std_atr
         # 计算出仓位比例
         atr_pos = g_atr_pos_base / atr_wv
         # 最大仓位限制
-        atr_pos = ABuPositionBase.g_pos_max if atr_pos > ABuPositionBase.g_pos_max else atr_pos
+        atr_pos = abupy.ABuPositionBase.g_pos_max if atr_pos > abupy.ABuPositionBase.g_pos_max else atr_pos
         # 结果是买入多少个单位（股，手，顿，合约）
         return self.read_cash * atr_pos / self.bp * self.deposit_rate
 
