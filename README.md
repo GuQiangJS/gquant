@@ -13,6 +13,12 @@
 - `Metrics`: `abupy.AbuMetricsBase`的扩展。
 - `MetricsUtils.plot_all()`: 绘图。
 
+## 仓位控制相关
+
+|名称|说明|
+|---|---|
+|`Position_AllIn`|满仓操作。|
+
 ## 买入/卖出相关
 
 ### 卖出
