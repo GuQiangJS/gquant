@@ -2,6 +2,10 @@
 
 主要实现对于 `abupy` 的扩展。
 
+# 安装
+
+`$ pip install git+https://github.com/GuQiangJS/gquant.git`
+
 # 主要方法
 
 ## 度量相关
