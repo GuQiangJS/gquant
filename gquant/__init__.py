@@ -101,6 +101,7 @@ class BuyStrategy_TDTP(abupy.AbuFactorBuyXD):
             xd (int): 突破周期参数。比如20，30，40天...突破。
             price (str): 当前数据的列名。默认为`close`。
         """
+        super()._init_self(**kwargs)
         self.price = kwargs.pop('price', 'close')
         # self.xd->突破周期参数 xd， 比如20，30，40天...突破
         self.factor_name = '{}:{}:xd={}'.format(
@@ -123,6 +124,7 @@ class SellStrategy_TDTP(abupy.AbuFactorSellXD):
             xd (int): 突破周期参数。比如20，30，40天...突破。
             price (str): 当前数据的列名。默认为`close`。
         """
+        super()._init_self(**kwargs)
         self.price = kwargs.pop('price', 'close')
         # self.xd->突破周期参数 xd， 比如20，30，40天...突破
         self.factor_name = '{}:{}:xd={}'.format(
