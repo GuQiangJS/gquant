@@ -303,6 +303,10 @@ class Position_Atr(abupy.AbuPositionBase):
 class Position_AllIn(abupy.AbuPositionBase):
     """全仓"""
 
+    def _init_self(self, **kwargs):
+        """子类仓位管理针对可扩展参数的初始化"""
+        pass
+    
     def fit_position(self, factor_object):
         return self.read_cash / self.bp
 
