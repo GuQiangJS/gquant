@@ -311,7 +311,7 @@ class Position_AllIn(abupy.AbuPositionBase):
         return self.read_cash / self.bp
 
 class MetricsUtils():
-    def __plot_dist(series, benchmark,**kwargs):
+    def _plot_dist(series, benchmark,**kwargs):
         ax = sns.distplot(series,**kwargs)
         if benchmark:
             ax.axvline(benchmark, 0, 1, color='r')
@@ -330,7 +330,7 @@ class MetricsUtils():
         fig, axes = plt.subplots(3, 3, figsize=figsize)
 
         R = pd.Series([m.R for m in metrics if hasattr(m, 'R')]).dropna()
-        __plot_dist(R, None, ax=axes[0, 0])
+        _plot_dist(R, None, ax=axes[0, 0])
         axes[0, 0].axvline(x=R.mean(), color='#d62728',
                            label='R 均值:{:.2f}'.format(R.mean()))
         axes[0, 0].set_title('R值')
@@ -338,7 +338,7 @@ class MetricsUtils():
 
         MD = pd.Series(
             [m.max_drawdown for m in metrics if hasattr(m, 'max_drawdown')])
-        __plot_dist(MD, None, ax=axes[0, 1])
+        _plot_dist(MD, None, ax=axes[0, 1])
         axes[0, 1].axvline(x=np.mean(MD), color='#d62728',
                            label='最大回撤均值:{:.2%}'.format(np.mean(MD)))
         axes[0, 1].set_title('最大回撤')
@@ -346,12 +346,12 @@ class MetricsUtils():
 
         AVG_WIN = [m.avg_ret for m in metrics if hasattr(
             m, 'avg_ret') and m.avg_ret is not np.NaN]
-        __plot_dist(pd.Series(AVG_WIN), None, label='盈利交易平均盈利额均值:{:.2f}'.format(
+        _plot_dist(pd.Series(AVG_WIN), None, label='盈利交易平均盈利额均值:{:.2f}'.format(
             np.mean(AVG_WIN)), ax=axes[0, 2])
         axes[0, 2].axvline(x=np.mean(AVG_WIN), color='#d62728')
         AVG_LOS = [m.avg_los for m in metrics if hasattr(
             m, 'avg_los') and m.avg_los is not np.NaN]
-        __plot_dist(pd.Series(AVG_LOS), None, label='亏损交易平均亏损额均值:{:.2f}'.format(
+        _plot_dist(pd.Series(AVG_LOS), None, label='亏损交易平均亏损额均值:{:.2f}'.format(
             np.mean(AVG_LOS)), ax=axes[0, 2])
         axes[0, 2].axvline(x=np.mean(AVG_LOS), color='#2ca02c')
         axes[0, 2].set_title('平均盈亏')
@@ -374,7 +374,7 @@ class MetricsUtils():
 
         caplist = pd.Series(
             [c.capital.capital_pd['capital_blance'].iloc[-1] for c in metrics])
-        __plot_dist(caplist, None, ax=axes[1, 2])
+        _plot_dist(caplist, None, ax=axes[1, 2])
         init_cash = kwargs.pop('init_cash', Nont)
         if init_cash:
             axes[1, 2].axvline(x=init_cash, label='初始资金')
@@ -384,10 +384,10 @@ class MetricsUtils():
         axes[1, 2].legend()
 
         money = pd.Series([c.act_sell.buy_amount.mean() for c in metrics])
-        __plot_dist(money, None, label='平均买入资金:{:.2f}'.format(
+        _plot_dist(money, None, label='平均买入资金:{:.2f}'.format(
             money.mean()), ax=axes[2, 0])
         money = pd.Series([c.act_sell.sell_amount.mean() for c in metrics])
-        __plot_dist(money, None, label='平均卖出资金:{:.2f}'.format(
+        _plot_dist(money, None, label='平均卖出资金:{:.2f}'.format(
             money.mean()), ax=axes[2, 0])
         axes[2, 0].set_title('资金占用')
         axes[2, 0].legend()
@@ -409,7 +409,7 @@ class MetricsUtils():
 
         # 成交次数
         times = [len(m.act_sell) for m in metrics]
-        __plot_dist(pd.Series(times), None, label='成交次数均值:{:.2f}'.format(
+        _plot_dist(pd.Series(times), None, label='成交次数均值:{:.2f}'.format(
             np.mean(times)), ax=axes[2, 2])
         axes[2, 2].set_title('成交次数')
         axes[2, 2].legend()
