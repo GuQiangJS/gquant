@@ -4,7 +4,7 @@
 
 # 安装
 
-`$ pip install git+https://github.com/GuQiangJS/gquant.git`
+`$ pip install --upgrade git+https://github.com/GuQiangJS/gquant.git`
 
 # 主要方法
 
