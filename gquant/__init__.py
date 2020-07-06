@@ -272,6 +272,7 @@ class Position_Atr(abupy.AbuPositionBase):
     def _init_self(self, **kwargs):
         super()._init_self(**kwargs)
         self.atr = kwargs.pop('atr', 'atr21')
+        self.g_atr_pos_base = kwargs.pop('pos_base', 0.1)
 
     def fit_position(self, factor_object):
         """
@@ -292,7 +293,7 @@ class Position_Atr(abupy.AbuPositionBase):
         """
         atr_wv = abupy.AbuAtrPosition.s_std_atr_threshold if std_atr < abupy.AbuAtrPosition.s_std_atr_threshold else std_atr
         # 计算出仓位比例
-        atr_pos = g_atr_pos_base / atr_wv
+        atr_pos = self.g_atr_pos_base / atr_wv
         # 最大仓位限制
         atr_pos = abupy.ABuPositionBase.g_pos_max if atr_pos > abupy.ABuPositionBase.g_pos_max else atr_pos
         # 结果是买入多少个单位（股，手，顿，合约）
