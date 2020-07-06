@@ -162,7 +162,7 @@ class SellStrategy_NDay(abupy.AbuFactorSellBase):
                 self.sell_tomorrow(order)
 
 
-class SellStrategy_ATR(abupy.ABuFactorAtrNStop):
+class SellStrategy_ATR(abupy.FactorSellBu.ABuFactorAtrNStop):
     """n倍atr(止盈止损)。派生自:py:class`abupy.FactorSellBu.ABuFactorAtrNStop`。因为原本无法指定atr数据来源。
 
     Args:
