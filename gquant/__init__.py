@@ -280,7 +280,7 @@ class Position_Atr(abupy.AbuPositionBase):
         :param factor_object: ABuFactorBuyBases实例对象
         :return:买入多少个单位（股，手，顿，合约）
         """
-        if self.atr not in self.kl_pd_buy.columns:
+        if self.atr not in self.kl_pd_buy:
             raise ValueError()
         std_atr = (AbuAtrPosition.s_atr_base_price /
                    self.bp) * self.kl_pd_buy[self.atr]
