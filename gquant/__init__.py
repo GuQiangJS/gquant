@@ -134,7 +134,7 @@ class SellStrategy_TDTP(abupy.AbuFactorSellXD):
         return None
 
 
-class SellStrategy_NDay(AbuFactorSellBase):
+class SellStrategy_NDay(abupy.AbuFactorSellBase):
     """N日卖出方案。持有N日后，如果没有盈利，则卖出。参考`:py:class:abupy.FactorSellBu.ABuFactorSellNDay`"""
 
     def _init_self(self, **kwargs):
@@ -162,7 +162,7 @@ class SellStrategy_NDay(AbuFactorSellBase):
                 self.sell_tomorrow(order)
 
 
-class SellStrategy_ATR(abupy.FactorSellBu.ABuFactorAtrNStop):
+class SellStrategy_ATR(abupy.ABuFactorAtrNStop):
     """n倍atr(止盈止损)。派生自:py:class`abupy.FactorSellBu.ABuFactorAtrNStop`。因为原本无法指定atr数据来源。
 
     Args:
