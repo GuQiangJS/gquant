@@ -119,7 +119,8 @@ class BuyStrategy_TDTP(abupy.AbuFactorBuyXD):
             return None
 
         # 完成为fit_day中切片周期金融时间序列数据
-        self.xd_kl = self.kl_pd[self.today_ind - self.xd + 1:self.today_ind + 1]
+        # 去除当日
+        self.xd_kl = self.kl_pd[self.today_ind - self.xd:self.today_ind]
 
         return self.fit_day(today)
 
