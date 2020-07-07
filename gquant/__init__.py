@@ -451,9 +451,9 @@ class MetricsUtils():
         d=pd.Series()
         for v in metrics:
             if d.empty:
-                d=v.orders_pd['buy_facotr'].value_counts()
+                d=v.orders_pd['buy_factor'].value_counts()
             else:
-                d=d.add(v.orders_pd['buy_facotr'].value_counts(),fill_value=0)
+                d=d.add(v.orders_pd['buy_factor'].value_counts(),fill_value=0)
         axes[3, 0].pie(x=d.sell_type_extra,
                        labels=d.index,
                        colors=sns.color_palette("muted"),
