@@ -449,7 +449,7 @@ class MetricsUtils():
 
         # 买入策略占比
         d=pd.Series()
-        for k,v in metrics.items():
+        for v in metrics:
             if d.empty:
                 d=v.orders_pd['buy_facotr'].value_counts()
             else:
@@ -462,7 +462,7 @@ class MetricsUtils():
 
         # 卖出入策略占比
         d=pd.Series()
-        for k,v in metrics.items():
+        for v in metrics:
             if d.empty:
                 d=v.orders_pd['sell_type_extra'].value_counts()
             else:
