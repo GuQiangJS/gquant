@@ -25,6 +25,9 @@ def init():
     """忽略库警告，默认打开"""
     abupy.env.g_ignore_lib_warnings = True
 
+    """不使用自然周，自然月择时任务。参考abupy\AlphaBu\ABuPickTimeWorker.py"""
+    abupy.alpha.pick_time_worker.g_natural_long_task = False
+
     # colors=["#4878D0", "#EE854A", "#6ACC64", "#D65F5F", "#956CB4", "#8C613C", "#DC7EC0", "#797979", "#D5BB67", "#82C6E2"]
 
     plt.rcParams['font.sans-serif'] = ['SimHei']  # 解决中文显示问题-设置字体为黑体
