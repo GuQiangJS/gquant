@@ -230,6 +230,8 @@ class SellStrategy_ATR(abupy.AbuFactorSellBase):
                 self.__class__.__name__, self.stop_win_n)
 
         self.atr = kwargs['atr']
+        self.factor_name = '{}:atr={}'.format(self.__class__.__name__,
+                                              self.atr)
 
     def support_direction(self):
         """支持的方向，只支持正向"""
@@ -251,7 +253,6 @@ class SellStrategy_ATR(abupy.AbuFactorSellBase):
             """
             profit = (today.close - order.buy_price) * order.expect_direction
             stop_base = today[self.atr]
-            stop_base = today.atr21 + today.atr14
             if hasattr(
                     self, 'stop_win_n'
             ) and profit > 0 and profit > self.stop_win_n * stop_base:
@@ -328,10 +329,10 @@ class MetricsUtils():
             start (str): 测试开始时间。用于绘制标题。
             end (str): 测试结束时间。用于绘制标题。
         """
-        figsize = kwargs.pop('figsize', (15, 15))
+        figsize = kwargs.pop('figsize', (15, 20))
         start = kwargs.pop('start', None)
         end = kwargs.pop('end', None)
-        fig, axes = plt.subplots(3, 3, figsize=figsize)
+        fig, axes = plt.subplots(5, 3, figsize=figsize)
 
         R = pd.Series([m.R for m in metrics if hasattr(m, 'R')]).dropna()
         MetricsUtils._plot_dist(R, None, ax=axes[0, 0])
@@ -446,6 +447,32 @@ class MetricsUtils():
         axes[2, 2].set_title('成交次数')
         axes[2, 2].legend()
 
+        # 买入策略占比
+        d=pd.Series()
+        for k,v in metrics.items():
+            if d.empty:
+                d=v.orders_pd['buy_facotr'].value_counts()
+            else:
+                d=d.add(v.orders_pd['buy_facotr'].value_counts(),fill_value=0)
+        axes[3, 0].pie(x=d.sell_type_extra,
+                       labels=d.index,
+                       colors=sns.color_palette("muted"),
+                       autopct='%1.2f%%')
+        axes[3, 0].set_title('买入策略占比')
+
+        # 卖出入策略占比
+        d=pd.Series()
+        for k,v in metrics.items():
+            if d.empty:
+                d=v.orders_pd['sell_type_extra'].value_counts()
+            else:
+                d=d.add(v.orders_pd['sell_type_extra'].value_counts(),fill_value=0)
+        axes[3, 1].pie(x=d.sell_type_extra,
+                       labels=d.index,
+                       colors=sns.color_palette("muted"),
+                       autopct='%1.2f%%')
+        axes[3, 1].set_title('卖出入策略占比')
+
         if start and end:
             fig.suptitle('测试时段:{}~{}'.format(start, end))
 
@@ -457,3 +484,4 @@ class Indicator():
         res = talib.SAR(DataFrame.high.values, DataFrame.low.values,
                         acceleration, maximum)
         return pd.DataFrame({'SAR': res}, index=DataFrame.index)
+    
