@@ -272,11 +272,18 @@ class SellStrategy_ATR(abupy.AbuFactorSellBase):
 
 
 class Position_Atr(abupy.AbuPositionBase):
-    """atr仓位管理。复制并改写自:py:class`abupy.BetaBu.ABuAtrPosition`。因为原本无法指定atr数据来源。"""
+    """atr仓位管理。默认使用10日atr值进行计算。与:py:class`abupy.BetaBu.ABuAtrPosition`不同。
+        1. 因为原本无法指定atr数据来源。
+        2. abupy中的没有看懂 :(
+
+    Attributes:
+        atr (str): 默认使用10日atr值进行计算。
+        pos_base (float): 最大亏损占比。（例如占初始资金1%时，传入0.01)。默认为0.01。
+    """
     def _init_self(self, **kwargs):
         super()._init_self(**kwargs)
-        self.atr = kwargs.pop('atr', 'atr21')
-        self.g_atr_pos_base = kwargs.pop('pos_base', 0.1)
+        self.atr = kwargs.pop('atr', 'atr10')
+        self.g_atr_pos_base = kwargs.pop('pos_base', 0.01)
 
     def fit_position(self, factor_object):
         """
@@ -287,20 +294,22 @@ class Position_Atr(abupy.AbuPositionBase):
         """
         if self.atr not in self.kl_pd_buy:
             raise ValueError()
-        std_atr = (abupy.AbuAtrPosition.s_atr_base_price /
-                   self.bp) * self.kl_pd_buy[self.atr]
-        """
-            对atr 进行限制 避免由于股价波动过小，导致
-            atr小，产生大量买单，实际上针对这种波动异常（过小，过大）的股票
-            需要有其它的筛选过滤策略, 选股的时候取0.5，这样最大取两倍g_atr_pos_base
-        """
-        atr_wv = abupy.AbuAtrPosition.s_std_atr_threshold if std_atr < abupy.AbuAtrPosition.s_std_atr_threshold else std_atr
-        # 计算出仓位比例
-        atr_pos = self.g_atr_pos_base / atr_wv
-        # 最大仓位限制
-        atr_pos = abupy.ABuPositionBase.g_pos_max if atr_pos > abupy.ABuPositionBase.g_pos_max else atr_pos
-        # 结果是买入多少个单位（股，手，顿，合约）
-        return self.read_cash * atr_pos / self.bp * self.deposit_rate
+        # std_atr = (abupy.AbuAtrPosition.s_atr_base_price /
+        #            self.bp) * self.kl_pd_buy[self.atr]
+        # """
+        #     对atr 进行限制 避免由于股价波动过小，导致
+        #     atr小，产生大量买单，实际上针对这种波动异常（过小，过大）的股票
+        #     需要有其它的筛选过滤策略, 选股的时候取0.5，这样最大取两倍g_atr_pos_base
+        # """
+        # atr_wv = abupy.AbuAtrPosition.s_std_atr_threshold if std_atr < abupy.AbuAtrPosition.s_std_atr_threshold else std_atr
+        # # 计算出仓位比例
+        # atr_pos = self.g_atr_pos_base / atr_wv
+        # # 最大仓位限制
+        # atr_pos = abupy.ABuPositionBase.g_pos_max if atr_pos > abupy.ABuPositionBase.g_pos_max else atr_pos
+        # # 结果是买入多少个单位（股，手，顿，合约）
+        # return self.read_cash * atr_pos / self.bp * self.deposit_rate
+        return self.read_cash * self.g_atr_pos_base / self.bp / self.kl_pd_buy[
+            self.atr]
 
 
 class Position_AllIn(abupy.AbuPositionBase):
@@ -332,7 +341,7 @@ class MetricsUtils():
         figsize = kwargs.pop('figsize', (15, 20))
         start = kwargs.pop('start', None)
         end = kwargs.pop('end', None)
-        fig, axes = plt.subplots(5, 3, figsize=figsize)
+        fig, axes = plt.subplots(4, 3, figsize=figsize)
 
         R = pd.Series([m.R for m in metrics if hasattr(m, 'R')]).dropna()
         MetricsUtils._plot_dist(R, None, ax=axes[0, 0])
@@ -448,26 +457,28 @@ class MetricsUtils():
         axes[2, 2].legend()
 
         # 买入策略占比
-        d=pd.Series()
+        d = pd.Series()
         for v in metrics:
             if d.empty:
-                d=v.orders_pd['buy_factor'].value_counts()
+                d = v.orders_pd['buy_factor'].value_counts()
             else:
-                d=d.add(v.orders_pd['buy_factor'].value_counts(),fill_value=0)
-        axes[3, 0].pie(x=d.sell_type_extra,
+                d = d.add(v.orders_pd['buy_factor'].value_counts(),
+                          fill_value=0)
+        axes[3, 0].pie(x=d,
                        labels=d.index,
                        colors=sns.color_palette("muted"),
                        autopct='%1.2f%%')
         axes[3, 0].set_title('买入策略占比')
 
         # 卖出入策略占比
-        d=pd.Series()
+        d = pd.Series()
         for v in metrics:
             if d.empty:
-                d=v.orders_pd['sell_type_extra'].value_counts()
+                d = v.orders_pd['sell_type_extra'].value_counts()
             else:
-                d=d.add(v.orders_pd['sell_type_extra'].value_counts(),fill_value=0)
-        axes[3, 1].pie(x=d.sell_type_extra,
+                d = d.add(v.orders_pd['sell_type_extra'].value_counts(),
+                          fill_value=0)
+        axes[3, 1].pie(x=d,
                        labels=d.index,
                        colors=sns.color_palette("muted"),
                        autopct='%1.2f%%')
@@ -484,4 +495,3 @@ class Indicator():
         res = talib.SAR(DataFrame.high.values, DataFrame.low.values,
                         acceleration, maximum)
         return pd.DataFrame({'SAR': res}, index=DataFrame.index)
-    
