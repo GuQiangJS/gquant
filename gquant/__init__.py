@@ -169,7 +169,7 @@ class SellStrategy_TDTP(abupy.AbuFactorSellXD):
         return [abupy.ESupportDirection.DIRECTION_CAll.value]
 
     def fit_day(self, today, orders):
-        if today[self.price] < self.xd_kl[self.price].max():
+        if today[self.price] < self.xd_kl[self.price].min():
             for order in orders:
                 self.sell_tomorrow(order)
 
