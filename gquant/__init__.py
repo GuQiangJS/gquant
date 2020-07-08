@@ -12,9 +12,9 @@ class Metrics(abupy.AbuMetricsBase):
                                        & self.action_pd.deal.isin([True])]
         if self.act_sell.empty:
             return
-        self.act_sell['sell_amount'] = self.act_sell.apply(
+        self.act_sell['sell_cost'] = self.act_sell.apply(
             lambda order: order.Price * order.Cnt, axis=1)
-        self.act_sell['buy_amount'] = self.act_sell.apply(
+        self.act_sell['buy_cost'] = self.act_sell.apply(
             lambda order: order.Price2 * order.Cnt, axis=1)
 
         self.act_sell['sell_commission'] = self.act_sell.apply(
@@ -27,7 +27,7 @@ class Metrics(abupy.AbuMetricsBase):
             axis=1)
 
         self.act_sell[
-            'profit'] = self.act_sell.sell_amount - self.act_sell.buy_amount - self.act_sell.sell_commission - self.act_sell.buy_commission
+            'profit'] = self.act_sell.sell_cost - self.act_sell.buy_cost - self.act_sell.sell_commission - self.act_sell.buy_commission
         # 盈利比例
         self.act_sell['profit_cg'] = self.act_sell['profit'] / (
             self.act_sell['Price2'] * self.act_sell['Cnt'])
@@ -48,6 +48,12 @@ class Metrics(abupy.AbuMetricsBase):
         self.avg_profit = self.act_sell.profit.mean()
         # R=平均利润/平均损失
         self.R = np.round(abs(self.avg_profit) / abs(self.avg_los), 2)
+        # 每次交易相对于初始资金的收益
+        self.act_sell[
+            'profit_init'] = self.act_sell['profit'] / self.capital.read_cash
+        # 每次交易相对于初始资金的收益百分比
+        self.act_sell[
+            'profit_init_hunder'] = self.act_sell['profit_init'] * 100
 
     def profit_series(self, **kwargs):
         return pd.Series(
@@ -63,11 +69,12 @@ class Metrics(abupy.AbuMetricsBase):
                 self.avg_ret,  # 盈利交易平均盈利额
                 self.avg_los,  # 亏损交易平均亏损额
                 self.R,  # R
-                self.max_drawdown
+                self.max_drawdown,
+                self.act_sell['buy_cost'].mean()
             ],  # 最大回撤
             index=[
                 '盈亏总额', '最终价值', '交易次数', '盈利次数', '亏损次数', '盈利比率', '每笔交易平均盈亏额',
-                '盈利交易平均盈利额', '亏损交易平均亏损额', 'R', '最大回撤'
+                '盈利交易平均盈利额', '亏损交易平均亏损额', 'R', '最大回撤', '买入平均花费'
             ],
             **kwargs)
 
@@ -94,6 +101,39 @@ class SellStrategy_SAR(abupy.AbuFactorSellBase):
         if today[self.sar] >= today[self.price]:
             for order in orders:
                 self.sell_tomorrow(order)
+
+
+class SellStrategy_BBands(abupy.AbuFactorSellBase):
+    """布林带卖出策略。当收盘价在中线以下时卖出"""
+    def _init_self(self, **kwargs):
+        self.sell_type_extra = self.__class__.__name__
+
+    def support_direction(self):
+        """支持的方向，只支持正向"""
+        return [abupy.ESupportDirection.DIRECTION_CAll.value]
+
+    def fit_day(self, today, orders):
+        if today.close < today.bbmid:
+            for order in orders:
+                self.sell_tomorrow(order)
+
+
+class BuyStrategy_BBands(abupy.AbuFactorBuyTD, abupy.BuyCallMixin):
+    """布林带买入策略。当中线向上+开口变大+收盘价在上线以上时买入"""
+    def _init_self(self, **kwargs):
+        self.factor_name = '{}'.format(self.__class__.__name__)
+        self.atr = kwargs['atr']
+
+    def fit_day(self, today):
+        t = today
+        y = self.yesterday
+        by = self.bf_yesterday
+        b1 = t.bbmid > y.bbmid > by.bbmid  # 中线向上
+        b2 = t.bbup - t.bblow > y.bbup - y.bblow > by.bbup - by.bblow  # 开口变大
+        b3 = t.close > t.bbmid  # 收盘价在上线以上
+        if b1 and b2 and b3:
+            return self.buy_tomorrow()
+        return None
 
 
 class BuyStrategy_TDTP(abupy.AbuFactorBuyXD, abupy.BuyCallMixin):
@@ -252,7 +292,9 @@ class SellStrategy_ATR(abupy.AbuFactorSellBase):
                 order.expect_direction：买单的方向，收益＊方向＝实际收益
             """
             profit = (today.close - order.buy_price) * order.expect_direction
-            stop_base = today[self.atr]
+            # 使用购买日当前的ATR
+            stop_base = self.kl_pd[self.kl_pd['date'] == order.buy_date]
+            stop_base = stop_base[self.atr][0]
             if hasattr(
                     self, 'stop_win_n'
             ) and profit > 0 and profit > self.stop_win_n * stop_base:
@@ -416,12 +458,12 @@ class MetricsUtils():
         axes[1, 2].set_title('最终资金')
         axes[1, 2].legend()
 
-        money = pd.Series([c.act_sell.buy_amount.mean() for c in metrics])
+        money = pd.Series([c.act_sell.buy_cost.mean() for c in metrics])
         MetricsUtils._plot_dist(money,
                                 None,
                                 label='平均买入资金:{:.2f}'.format(money.mean()),
                                 ax=axes[2, 0])
-        money = pd.Series([c.act_sell.sell_amount.mean() for c in metrics])
+        money = pd.Series([c.act_sell.sell_cost.mean() for c in metrics])
         MetricsUtils._plot_dist(money,
                                 None,
                                 label='平均卖出资金:{:.2f}'.format(money.mean()),
