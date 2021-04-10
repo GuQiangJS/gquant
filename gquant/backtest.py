@@ -60,6 +60,7 @@ def backtest(data, init_cash=10000, **kwargs):
                 buy_df.append(pd.DataFrame({'buy_date': row.name, 'buy_price': buy_price,
                                             'buy_amount': amount, 'buy_comm': buy_com, 'buy_cash': cash, 'buy_funds': funds}, index=[0]))
                 cash = cash-buy_price*amount-buy_com
+                continue
         if hold_amount > 0 and row['sell'] == 1:
             if sell_price_func != None:
                 sell_price = sell_price_func(index, row, data)
