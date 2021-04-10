@@ -4,8 +4,8 @@ with open("README.md", "r", encoding='utf-8') as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="gquant", # Replace with your own username
-    version="0.0.2",
+    name="gquant",  # Replace with your own username
+    version="0.0.3",
     author='GuQiangJS',
     author_email='guqiangjs@gmail.com',
     long_description=long_description,
