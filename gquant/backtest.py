@@ -9,21 +9,21 @@ from empyrical import stats
 def backtest(data, init_cash=10000, **kwargs):
     """
     模拟回测
-
     Args:
         data (pd.DataFrame): 数据源。以日期为index，其中包含buy和sell列。分别以1标识为买入和卖出。
         init_cash: 初始资金。默认10000。
+        buy_price_func: 就算购买时使用的数据的方法。默认接受`index`，`row`两个数据，`index`为data的当前位置，`row`为当天数据。当此参数有值时会忽略`buy_col`参数。
         buy_col (str): 购买时使用的列。默认为'open'。
         buy_limit (int): 最小购买数量。默认100。
         buy_tax: 购买时印花税率。默认为0.0003(万3)。
         buy_comm: 购买时佣金比率。默认为0.00025(万2.5)。
         buy_limit_comm: 购买时最低佣金金额。默认为5。
+        sell_price_func: 就算卖出时使用的数据的方法。默认接受`index`，`row`两个数据，`index`为data的当前位置，`row`为当天数据。当此参数有值时会忽略`sell_col`参数。
         sell_col (str): 卖出时使用的列。默认为'close'。
         sell_tax: 卖出时印花税率。默认为0.0003(万3)。
         sell_comm: 卖出时佣金比率。默认为0.00025(万2.5)。
         sell_limit_comm: 卖出时最低佣金金额。默认为5。
         benchmark_pd: 基准数据。默认为data。
-
     Returns:
         Metrics对象。
     """
@@ -41,9 +41,14 @@ def backtest(data, init_cash=10000, **kwargs):
     sell_comm = kwargs.pop('sell_comm', 0.00025)
     sell_limit_comm = kwargs.pop('sell_limit_comm', 5)
     benchmark_pd = kwargs.pop('benchmark_pd', data)
+    buy_price_func=kwargs.pop('buy_price_func',None)
+    sell_price_func=kwargs.pop('sell_price_func',None)
     for index, row in tqdm(data.iterrows()):
         if hold_amount == 0 and row['buy'] == 1:
-            buy_price = row[buy_col]
+            if buy_price_func!=None:
+                buy_price = buy_price_func(index,row)
+            else:
+                buy_price = row[buy_col]
             amount = _calc_buy_amount(cash, buy_price, limit=buy_limit)
             if amount > 0:
                 hold_amount = amount
@@ -56,7 +61,10 @@ def backtest(data, init_cash=10000, **kwargs):
                                             'buy_amount': amount, 'buy_comm': buy_com, 'buy_cash': cash, 'buy_funds': funds}, index=[0]))
                 cash = cash-buy_price*amount-buy_com
         if hold_amount > 0 and row['sell'] == 1:
-            sell_price = row[sell_col]
+            if sell_price_func!=None:
+                sell_price = sell_price_func(index,row)
+            else:
+                sell_price = row[sell_col]
             sell_com = _calc_commission(
                 hold_amount, sell_price, tax=sell_tax, comm=sell_comm, limit_comm=sell_limit_comm)
             logging.debug('{}:{:.2f}+{:.2f}-{:.2f}={:.2f}'.format(row.name, cash,
