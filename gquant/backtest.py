@@ -163,7 +163,7 @@ class Metrics():
             '交易次数': '{:.0f}'.format(self.x_df.shape[0]),
             '未结束交易次数': '{:.0f}'.format(self.x_df[self.x_df['sell_price'].isna()].shape[0]),
             '未结束交易购买金额': '{:.2f}'.format(self.x_df[self.x_df['sell_price'].isna()].buy_cost.sum()),
-            '未结束交易当前价值': '{:.2f}'.format(self.x_df[self.x_df['sell_price'].isna()].buy_amount.sum()*m.benchmark_pd.iloc[-1]['close']),
+            '未结束交易当前价值': '{:.2f}'.format(self.x_df[self.x_df['sell_price'].isna()].buy_amount.sum()*self.benchmark_pd.iloc[-1]['close']),
             '盈利次数': '{:.0f}'.format(self.x_df[self.x_df['profit'] > 0].shape[0]),
             '亏损次数': '{:.0f}'.format(self.x_df[self.x_df['profit'] < 0].shape[0]),
             '盈利次数占比': '{:.2%}'.format(self.x_df[self.x_df['profit'] > 0].shape[0]/self.x_df.shape[0]),
