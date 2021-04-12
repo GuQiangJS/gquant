@@ -159,30 +159,36 @@ class Metrics():
     def report(self):
 
         d = {
-            '剩余现金': '{:.2f}'.format(self.cash),
-            '交易次数': '{:.0f}'.format(self.x_df.shape[0]),
-            '未结束交易次数': '{:.0f}'.format(self.x_df[self.x_df['sell_price'].isna()].shape[0]),
-            '未结束交易购买金额': '{:.2f}'.format(self.x_df[self.x_df['sell_price'].isna()].buy_cost.sum()),
-            '未结束交易当前价值': '{:.2f}'.format(self.x_df[self.x_df['sell_price'].isna()].buy_amount.sum()*self.benchmark_pd.iloc[-1]['close']),
-            '盈利次数': '{:.0f}'.format(self.x_df[self.x_df['profit'] > 0].shape[0]),
-            '亏损次数': '{:.0f}'.format(self.x_df[self.x_df['profit'] < 0].shape[0]),
-            '盈利次数占比': '{:.2%}'.format(self.x_df[self.x_df['profit'] > 0].shape[0]/self.x_df.shape[0]),
-            '盈利(含交易费)次数': '{:.0f}'.format(self.x_df[self.x_df['profit_comm'] > 0].shape[0]),
-            '亏损(含交易费)次数': '{:.0f}'.format(self.x_df[self.x_df['profit_comm'] < 0].shape[0]),
-            '盈利(含交易费)次数占比': '{:.2%}'.format(self.x_df[self.x_df['profit_comm'] > 0].shape[0]/self.x_df.shape[0]),
-            '盈利交易平均获利': '{:.2f}'.format(self.x_df[self.x_df['profit'] > 0].profit.mean()),
-            '亏损交易平均亏损': '{:.2f}'.format(self.x_df[self.x_df['profit'] < 0].profit.mean()),
-            '盈利(含交易费)交易平均获利': '{:.2f}'.format(self.x_df[self.x_df['profit_comm'] > 0].profit.mean()),
-            '亏损(含交易费)交易平均亏损': '{:.2f}'.format(self.x_df[self.x_df['profit_comm'] < 0].profit.mean()),
-            '盈亏总额': '{:.2f}'.format(self.x_df['profit'].sum()),
-            '手续费总额': '{:.2f}'.format(self.x_df['sell_comm'].sum()+self.x_df['buy_comm'].sum()),
-            '手续费均值': '{:.2f}'.format((self.buy_pd['buy_comm'].mean()+self.sell_pd['sell_comm'].mean())/2),
-            '最大盈利%': '{:.2%}'.format((self.x_df['profit']/self.x_df['buy_cost']).max()),
-            '最大亏损%': '{:.2%}'.format((self.x_df['profit']/self.x_df['buy_cost']).min()),
-            '最大(含交易费)盈利%': '{:.2%}'.format((self.x_df['profit_comm']/self.x_df['buy_cost']).max()),
-            '最大(含交易费)亏损%': '{:.2%}'.format((self.x_df['profit_comm']/self.x_df['buy_cost']).min()),
+            '初始资金': self.init_cash,
+            '剩余现金': self.cash,
+            '交易次数': self.x_df.shape[0],
+            '未结束交易次数': self.x_df[self.x_df['sell_price'].isna()].shape[0],
+            '未结束交易购买金额': self.x_df[self.x_df['sell_price'].isna()].buy_cost.sum(),
+            '未结束交易当前价值': self.x_df[self.x_df['sell_price'].isna()].buy_amount.sum()*self.benchmark_pd.iloc[-1]['close'],
+            '盈利次数': self.x_df[self.x_df['profit'] > 0].shape[0],
+            '亏损次数': self.x_df[self.x_df['profit'] < 0].shape[0],
+            '盈利次数占比': self.x_df[self.x_df['profit'] > 0].shape[0]/self.x_df.shape[0],
+            '盈利(含交易费)次数': self.x_df[self.x_df['profit_comm'] > 0].shape[0],
+            '亏损(含交易费)次数': self.x_df[self.x_df['profit_comm'] < 0].shape[0],
+            '盈利(含交易费)次数占比': self.x_df[self.x_df['profit_comm'] > 0].shape[0]/self.x_df.shape[0],
+            '盈利交易平均获利': self.x_df[self.x_df['profit'] > 0].profit.mean(),
+            '亏损交易平均亏损': self.x_df[self.x_df['profit'] < 0].profit.mean(),
+            '盈利(含交易费)交易平均获利': self.x_df[self.x_df['profit_comm'] > 0].profit.mean(),
+            '亏损(含交易费)交易平均亏损': self.x_df[self.x_df['profit_comm'] < 0].profit.mean(),
+            '盈亏总额': self.x_df['profit'].sum(),
+            '手续费总额': self.x_df['sell_comm'].sum()+self.x_df['buy_comm'].sum(),
+            '手续费均值': (self.buy_pd['buy_comm'].mean()+self.sell_pd['sell_comm'].mean())/2,
+            '最大盈利%': (self.x_df['profit']/self.x_df['buy_cost']).max(),
+            '最大亏损%': (self.x_df['profit']/self.x_df['buy_cost']).min(),
+            '最大(含交易费)盈利%': (self.x_df['profit_comm']/self.x_df['buy_cost']).max(),
+            '最大(含交易费)亏损%': (self.x_df['profit_comm']/self.x_df['buy_cost']).min(),
+            '基准浮动盈亏(未结束交易当前价值+剩余现金)': self.benchmark_pd.iloc[-1]['close']/self.benchmark_pd.iloc[0]['open']
         }
-        return pd.Series(d, index=d.keys())
+        rep = pd.Series(d, index=d.keys())
+        rep['结算价值(未结束交易当前价值+剩余现金)'] = rep['未结束交易当前价值']+rep['剩余现金']
+        rep['浮动盈亏(结算价值/初始资金)'] = rep['结算价值']/self.init_cash
+
+        return rep
 
     def plot_cash(self):
         self.algorithm_cum_returns.plot(label='策略收益')
