@@ -76,8 +76,10 @@ def backtest(data, init_cash=10000, **kwargs):
             cash = cash+sell_price*hold_amount-sell_com
             hold_amount = 0
 
-    buy_df = pd.concat(buy_df).reset_index().drop(columns='index')
-    sell_df = pd.concat(sell_df).reset_index().drop(columns='index')
+    buy_df = pd.concat(buy_df).reset_index().drop(
+        columns='index') if buy_df else pd.DataFrame()
+    sell_df = pd.concat(sell_df).reset_index().drop(
+        columns='index') if sell_df else pd.DataFrame()
 
     return Metrics(buy_df, sell_df, init_cash, cash, benchmark_pd)
 
