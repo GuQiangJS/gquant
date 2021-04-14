@@ -188,7 +188,7 @@ class Metrics():
         }
         rep = pd.Series(d, index=d.keys())
         rep['结算价值(未结束交易当前价值+剩余现金)'] = rep['未结束交易当前价值']+rep['剩余现金']
-        rep['浮动盈亏(结算价值/初始资金)'] = rep['结算价值']/self.init_cash
+        rep['浮动盈亏(结算价值/初始资金)'] = rep['结算价值(未结束交易当前价值+剩余现金)']/self.init_cash
 
         return rep
 
