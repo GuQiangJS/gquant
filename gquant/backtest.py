@@ -77,9 +77,10 @@ def backtest(data, init_cash=10000, **kwargs):
             hold_amount = 0
 
     def _create_empty_buydf():
-        return pd.DataFrame({'buy_date':[],'buy_price':[],'buy_amount':[],'buy_comm':[],'buy_cash':[],'buy_funds':[]})
+        return pd.DataFrame({'buy_date': [], 'buy_price': [], 'buy_amount': [], 'buy_comm': [], 'buy_cash': [], 'buy_funds': []})
+
     def _create_empty_selldf():
-        return pd.DataFrame({'sell_date':[],'sell_price':[],'sell_amount':[],'sell_comm':[],'sell_cash':[],'sell_funds':[]})
+        return pd.DataFrame({'sell_date': [], 'sell_price': [], 'sell_amount': [], 'sell_comm': [], 'sell_cash': [], 'sell_funds': []})
 
     buy_df = pd.concat(buy_df).reset_index().drop(
         columns='index') if buy_df else _create_empty_buydf()
@@ -132,8 +133,8 @@ class Metrics():
         self.benchmark_cum_returns = stats.cum_returns(self.benchmark_returns)
 
         # 最后一日的cum return
-        self.benchmark_period_returns = self.benchmark_cum_returns[-1]
-        self.algorithm_period_returns = self.algorithm_cum_returns[-1]
+        self.benchmark_period_returns = self.benchmark_cum_returns[-1] if not self.benchmark_cum_returns.empty else 0
+        self.algorithm_period_returns = self.algorithm_cum_returns[-1] if not self.algorithm_cum_returns.empty else 0
 
         # 交易天数
         self.num_trading_days = len(self.benchmark_returns)
@@ -159,9 +160,23 @@ class Metrics():
             '基准年化收益': self.benchmark_annualized_returns,
             '策略年化收益': self.algorithm_annualized_returns,
             '基准最大回撤': self.benchmark_max_drawdown,
-            '策略最大回撤': self.algorithm_max_drawdown
+            '策略最大回撤': self.algorithm_max_drawdown,
+            '基准浮动盈亏(基准最后收盘/基准最先开盘)': self.get_jzfdyk(),
+            '策略浮动盈亏(未结束交易当前价值+剩余现金/初始资金)': self.get_jsjz()/self.init_cash,
         }
         return pd.Series(d, index=d.keys())
+
+    def get_jzfdyk(self):
+        """基准浮动盈亏(基准最后收盘/基准最先开盘)"""
+        return self.benchmark_pd.iloc[-1]['close']/self.benchmark_pd.iloc[0]['open']
+
+    def get_jsjz(self):
+        """未结束交易当前价值+剩余现金"""
+        return self.get_wjsjydqjz()+self.cash
+
+    def get_wjsjydqjz(self):
+        """未结束交易当前价值"""
+        return self.x_df[self.x_df['sell_price'].isna()].buy_amount.sum()*self.benchmark_pd.iloc[-1]['close']
 
     def report(self):
 
@@ -171,7 +186,7 @@ class Metrics():
             '交易次数': self.x_df.shape[0],
             '未结束交易次数': self.x_df[self.x_df['sell_price'].isna()].shape[0],
             '未结束交易购买金额': self.x_df[self.x_df['sell_price'].isna()].buy_cost.sum(),
-            '未结束交易当前价值': self.x_df[self.x_df['sell_price'].isna()].buy_amount.sum()*self.benchmark_pd.iloc[-1]['close'],
+            '未结束交易当前价值': self.get_wjsjydqjz(),
             '盈利次数': self.x_df[self.x_df['profit'] > 0].shape[0],
             '亏损次数': self.x_df[self.x_df['profit'] < 0].shape[0],
             '盈利次数占比': self.x_df[self.x_df['profit'] > 0].shape[0]/self.x_df.shape[0],
@@ -189,10 +204,10 @@ class Metrics():
             '最大亏损%': (self.x_df['profit']/self.x_df['buy_cost']).min(),
             '最大(含交易费)盈利%': (self.x_df['profit_comm']/self.x_df['buy_cost']).max(),
             '最大(含交易费)亏损%': (self.x_df['profit_comm']/self.x_df['buy_cost']).min(),
-            '基准浮动盈亏(未结束交易当前价值+剩余现金)': self.benchmark_pd.iloc[-1]['close']/self.benchmark_pd.iloc[0]['open']
+            '基准浮动盈亏(基准最后收盘/基准最先开盘)': self.get_jzfdyk(),
         }
         rep = pd.Series(d, index=d.keys())
-        rep['结算价值(未结束交易当前价值+剩余现金)'] = rep['未结束交易当前价值']+rep['剩余现金']
+        rep['结算价值(未结束交易当前价值+剩余现金)'] = self.get_jsjz()
         rep['浮动盈亏(结算价值/初始资金)'] = rep['结算价值(未结束交易当前价值+剩余现金)']/self.init_cash
 
         return rep
