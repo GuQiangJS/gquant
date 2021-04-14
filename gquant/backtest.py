@@ -77,7 +77,7 @@ def backtest(data, init_cash=10000, **kwargs):
             hold_amount = 0
 
     def _create_empty_buydf():
-        df=pd.DataFrame({'date':[],'buy_price':[],'buy_amount':[],'buy_comm':[],'buy_cash':[],'buy_funds':[]}
+        df=pd.DataFrame({'date':[],'buy_price':[],'buy_amount':[],'buy_comm':[],'buy_cash':[],'buy_funds':[]})
         df.set_index('date',inplace=True)
         return df
     def _create_empty_selldf():
