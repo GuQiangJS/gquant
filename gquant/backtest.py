@@ -76,10 +76,19 @@ def backtest(data, init_cash=10000, **kwargs):
             cash = cash+sell_price*hold_amount-sell_com
             hold_amount = 0
 
+    def _create_empty_buydf():
+        df=pd.DataFrame({'date':[],'buy_price':[],'buy_amount':[],'buy_comm':[],'buy_cash':[],'buy_funds':[]}
+        df.set_index('date',inplace=True)
+        return df
+    def _create_empty_selldf():
+        return pd.DataFrame({'date':[],'sell_price':[],'sell_amount':[],'sell_comm':[],'sell_cash':[],'sell_funds':[]})
+        df.set_index('date',inplace=True)
+        return df
+
     buy_df = pd.concat(buy_df).reset_index().drop(
-        columns='index') if buy_df else pd.DataFrame()
+        columns='index') if buy_df else _create_empty_buydf()
     sell_df = pd.concat(sell_df).reset_index().drop(
-        columns='index') if sell_df else pd.DataFrame()
+        columns='index') if sell_df else _create_empty_selldf()
 
     return Metrics(buy_df, sell_df, init_cash, cash, benchmark_pd)
 
