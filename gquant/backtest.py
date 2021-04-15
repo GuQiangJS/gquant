@@ -91,7 +91,7 @@ def backtest(data, init_cash=10000, **kwargs):
 
 
 class Metrics():
-    def __init__(self, buy_pd, sell_pd, init_cash, cash, benchmark_pd, market_trade_year=250):
+    def __init__(self, data, buy_pd, sell_pd, init_cash, cash, benchmark_pd, market_trade_year=250):
         """
         Args:
             buy_pd: 以数字顺序作为index的购买记录的DataFrame。其中包含'buy_price','buy_amount','buy_date'列。
@@ -101,6 +101,7 @@ class Metrics():
             benchmark_pd: 基准数据源。
             market_trade_year: 市场中1年交易日，默认250日。
         """
+        self.data = data
         self.cash = cash
         self.buy_pd = buy_pd
         self.sell_pd = sell_pd
@@ -176,7 +177,7 @@ class Metrics():
 
     def get_wjsjydqjz(self):
         """未结束交易当前价值"""
-        return self.x_df[self.x_df['sell_price'].isna()].buy_amount.sum()*self.benchmark_pd.iloc[-1]['close']
+        return self.x_df[self.x_df['sell_price'].isna()].buy_amount.sum()*self.data.iloc[-1]['close']
 
     def report(self):
 
