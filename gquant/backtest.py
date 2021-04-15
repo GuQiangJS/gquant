@@ -87,7 +87,7 @@ def backtest(data, init_cash=10000, **kwargs):
     sell_df = pd.concat(sell_df).reset_index().drop(
         columns='index') if sell_df else _create_empty_selldf()
 
-    return Metrics(buy_df, sell_df, init_cash, cash, benchmark_pd)
+    return Metrics(data, buy_df, sell_df, init_cash, cash, benchmark_pd)
 
 
 class Metrics():
