@@ -16,7 +16,7 @@ def TR(DataFrame):
     return pd.DataFrame({'TR': TR})
 
 
-def _up_percent(c):
+def up_percent(c):
     """计算按日分组后的上涨概率。"""
     return len(c[c > 0])/len(c)
 
@@ -24,16 +24,16 @@ def _up_percent(c):
 def calc_full_market(data):
     """对完整市场数据按照日期进行分组后统计"""
     return data.groupby(['weekday']).agg({
-        '收盘价变化率': ['mean', 'median', _up_percent],
-        '日价格变化幅度': ['mean', 'median', _up_percent],
+        '收盘价变化率': ['mean', 'median', up_percent],
+        '日价格变化幅度': ['mean', 'median', up_percent],
     })
 
 
 def calc_split_market(data):
     """对完整市场数据按照上涨市/下跌市+日期进行分组后统计"""
     return data.groupby(['market', 'weekday']).agg({
-        '收盘价变化率': ['mean', 'median', _up_percent],
-        '日价格变化幅度': ['mean', 'median', _up_percent],
+        '收盘价变化率': ['mean', 'median', up_percent],
+        '日价格变化幅度': ['mean', 'median', up_percent],
     })
 
 
