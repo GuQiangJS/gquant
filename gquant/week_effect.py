@@ -1,7 +1,7 @@
 """周内效应相关方法"""
 from QUANTAXIS.QAIndicator.base import MAX, ABS, REF
 import pandas as pd
-from backtest import backtest
+from gquant.backtest import backtest
 
 
 def TR(DataFrame):
