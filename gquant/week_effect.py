@@ -168,6 +168,11 @@ def split_test(x, y, low_buy_dates, up_buy_dates, low_buy_opens, up_buy_opens, n
         up_buy_opens: 上涨市以开盘价买入的日期集合
         name: 返回报告数据表的名称
     """
+    """
+    假设现在是1.2日收盘，需要预测1.3日如何操作：
+    1. 需要取1.3日数据行上的`prev_market`来拿到1.2日的market数据。也只有那1.2的market数据才是合理的。
+    2. 判断1.4日是否在可买区间内，如果在可买区间内，再将1.3日标记可买。
+    """
     x.loc[(x['prev_market'] == -1) &
           (x['nextday'].isin(low_buy_dates)), 'buy'] = 1
     x.loc[(x['prev_market'] == 1) & (
