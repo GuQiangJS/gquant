@@ -2,6 +2,10 @@
 from QUANTAXIS.QAIndicator.base import MAX, ABS, REF
 import pandas as pd
 from gquant.backtest import backtest
+from faker import Faker
+import datetime
+from tqdm import tqdm
+import numpy as np
 
 
 def TR(DataFrame):
@@ -30,8 +34,8 @@ def calc_full_market(data):
 
 
 def calc_split_market(data):
-    """对完整市场数据按照上涨市/下跌市+日期进行分组后统计"""
-    return data.groupby(['market', 'weekday']).agg({
+    """对完整市场数据按照**昨天**是上涨市/下跌市+日期进行分组后统计"""
+    return data.groupby(['prev_market', 'weekday']).agg({
         '收盘价变化率': ['mean', 'median', up_percent],
         '日价格变化幅度': ['mean', 'median', up_percent],
     })
@@ -207,3 +211,97 @@ def split_test(x, y, low_buy_dates, up_buy_dates, low_buy_opens, up_buy_opens, n
     split_report.set_index('name', inplace=True)
 
     return split_report, split
+
+
+class _A:
+    def __init__(self, date, ps, fs):
+        self.date = date
+        self.ps = ps
+        self.fs = fs
+
+    def __eq__(self, other):
+        return self.date == other.date and self.ps == other.ps and self.fs == other.fs
+
+
+def MonteCarloTest(full_data, full_benchmark_data, start_date=datetime.date(year=2015,
+                                                                            month=1,
+                                                                            day=1),
+                   end_date=datetime.date(year=2019,
+                                          month=12,
+                                          day=31),
+                   ps_min=1, ps_max=3, fs_min=93, fs_max=366, times=100000):
+    """
+    蒙特卡洛模拟测试。
+
+    从`start_date`~`end_date`之间随机选择一个日期，向前推`ps_min`~`ps_max`年（随机选择）作为测算数据，
+    向后推`fs_min`~`fs_max`天(随机选择）作为验证数据。
+    根据测算数据计算买入/卖出标准(测算方式参见calc_full_market,calc_full_buy_dates,calc_full_buy_opens及
+    calc_split_market,calc_split_buy_dates,calc_split_buy_opens)，
+    对验证数据进行蒙特卡洛模拟测算。*用来模拟测算随机日期是否能够跑赢基准*。
+
+    Args:
+        full_data (DataFrame): 测试用的完整数据，测试时会根据随机选择出的时间段再进行筛选。
+        full_benchmark_data (DataFrame): 基准的完整数据，测试时会根据随机选择出的时间段再进行筛选。
+        start_date (datetime.date): 随机选择测试时间的开始时间。默认为2015-01-01。
+        end_date (datetime.date): 随机选择测试时间的截止时间。默认为2019-12-31。
+        ps_min (int): 随机选择过去几年的数据作为测试数据的随机选择开始值。默认为1。
+        ps_min (int): 随机选择过去几年的数据作为测试数据的随机选择截止值。默认为3。
+        fs_min (int): 随机选择以后几年的数据作为验证数据的随机选择开始值。默认为93。
+        fs_max (int): 随机选择以后几年的数据作为验证数据的随机选择截止值。默认为366。
+        times (int): 测试次数。默认为100000。
+    """
+    fake = Faker()
+    reports = []
+    ds = []
+    for i in tqdm(range(times)):
+        date = fake.date_between(start_date=start_date,
+                                 end_date=end_date)
+        ps = fake.pyint(min_value=ps_min, max_value=ps_max)  # 过去几年的数据作为测算数据
+        fs = fake.pyint(min_value=fs_min, max_value=fs_max)
+        d = _A(date, ps, fs)
+        if d in ds:
+            continue
+        ds.append(d)
+        x_start = date + datetime.timedelta(days=-365 * ps)
+        x_end = date + datetime.timedelta(days=-1)
+        y_start = date
+        y_end = date + datetime.timedelta(days=fs)
+        data = full_data[x_start:x_end]
+        x = full_data[y_start:y_end]
+        y = full_benchmark_data[y_start:y_end]
+        market = calc_full_market(data)
+        buy_dates = calc_full_buy_dates(market)
+        buy_opens = calc_full_buy_opens(market)
+        r, m = full_test(x, y, buy_dates, buy_opens, name='完整')
+        r['x_start'] = x_start
+        r['x_end'] = x_end
+        r['y_start'] = y_start
+        r['y_end'] = y_end
+        r['passyears'] = ps
+        r['test_days'] = fs
+        reports.append(r)
+        market_split = calc_split_market(data)
+        low_buy_dates, up_buy_dates = calc_split_buy_dates(market_split)
+        low_buy_open, up_buy_open = calc_split_buy_opens(market_split)
+        x = full_data[y_start:y_end]
+        y = full_benchmark_data[y_start:y_end]
+        rs, m = split_test(x, y, low_buy_dates, up_buy_dates, low_buy_open,
+                           up_buy_open, '拆分')
+        rs['x_start'] = x_start
+        rs['x_end'] = x_end
+        rs['y_start'] = y_start
+        rs['y_end'] = y_end
+        rs['passyears'] = ps
+        rs['test_days'] = fs
+        reports.append(rs)
+    from IPython.display import clear_output
+    clear_output(wait=True)
+    report = pd.concat(reports).rename(columns={
+        '基准浮动盈亏(基准最后收盘/基准最先开盘)': '基准浮动盈亏',
+        '浮动盈亏(结算价值/初始资金)': '策略浮动盈亏'
+    })
+    report['跑赢基准'] = report['策略浮动盈亏'] / report['基准浮动盈亏'] - 1
+    # report.style.bar(subset=['跑赢基准'], align='mid', color=['#5fba7d','#d65f5f'])
+    report['跑赢基准'] = np.sign(report['跑赢基准'])
+    report['是否盈利'] = np.sign(report['策略浮动盈亏'] - 1)  # 是否盈利
+    return report
