@@ -4,7 +4,7 @@ import pandas as pd
 from gquant.backtest import backtest
 from faker import Faker
 import datetime
-from tqdm import tqdm
+from tqdm.notebook import tqdm
 import numpy as np
 
 
