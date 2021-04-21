@@ -4,7 +4,7 @@ import pandas as pd
 from gquant.backtest import backtest
 from faker import Faker
 import datetime
-from tqdm.notebook import tqdm
+from tqdm.auto import tqdm
 import numpy as np
 
 
@@ -22,7 +22,7 @@ def TR(DataFrame):
 
 def up_percent(c):
     """计算按日分组后的上涨概率。"""
-    return len(c[c > 0])/len(c)
+    return len(c[c > 0]) / len(c)
 
 
 def calc_full_market(data):
@@ -66,10 +66,10 @@ def calc_split_buy_dates(market_split):
     """
     low_market = market_split.loc[-1, '收盘价变化率']
     up_market = market_split.loc[1, '收盘价变化率']
-    low_buy_dates = low_market[(low_market['up_percent'] >= 0.5) & (
-        low_market['median'] >= 0)].index.values
-    up_buy_dates = up_market[(up_market['up_percent'] >= 0.5) & (
-        up_market['median'] >= 0)].index.values
+    low_buy_dates = low_market[(low_market['up_percent'] >= 0.5)
+                               & (low_market['median'] >= 0)].index.values
+    up_buy_dates = up_market[(up_market['up_percent'] >= 0.5)
+                             & (up_market['median'] >= 0)].index.values
     return low_buy_dates, up_buy_dates
 
 
@@ -82,7 +82,8 @@ def calc_full_buy_opens(market):
     """
     market_d = market['日价格变化幅度']
     #
-    return market_d[(market_d['up_percent'] >= 0.5) & (market_d['median'] >= 0)].index.values
+    return market_d[(market_d['up_percent'] >= 0.5)
+                    & (market_d['median'] >= 0)].index.values
 
 
 def calc_split_buy_opens(market_split):
@@ -97,10 +98,10 @@ def calc_split_buy_opens(market_split):
     """
     low_market = market_split.loc[-1, '日价格变化幅度']
     up_market = market_split.loc[1, '日价格变化幅度']
-    low_buy_open = low_market[(low_market['up_percent'] >= 0.5) & (
-        low_market['median'] >= 0)].index.values
-    up_buy_open = up_market[(up_market['up_percent'] >= 0.5) & (
-        up_market['median'] >= 0)].index.values
+    low_buy_open = low_market[(low_market['up_percent'] >= 0.5)
+                              & (low_market['median'] >= 0)].index.values
+    up_buy_open = up_market[(up_market['up_percent'] >= 0.5)
+                            & (up_market['median'] >= 0)].index.values
     return low_buy_open, up_buy_open
 
 
@@ -118,7 +119,6 @@ def full_test(x, y, buy_date, buy_open, name):
         m_report: 报告数据表
         m (Metrics): 回测结果对象
     """
-
     def buy_func(index, row, data):
         if row['weekday'] in buy_open:
             return row['open']
@@ -145,8 +145,8 @@ def full_test(x, y, buy_date, buy_open, name):
                  sell_price_func=sell_func)
 
     m_report = m.report()[[
-        '基准浮动盈亏(基准最后收盘/基准最先开盘)', '浮动盈亏(结算价值/初始资金)', '盈利次数', '亏损次数', '未结束交易购买金额',
-        '未结束交易当前价值'
+        '基准浮动盈亏(基准最后收盘/基准最先开盘)', '浮动盈亏(结算价值/初始资金)', '盈利次数', '亏损次数',
+        '未结束交易购买金额', '未结束交易当前价值'
     ]].append(m.stats()[['基准最大回撤', '策略最大回撤']]).to_frame().T
     if name:
         m_report['name'] = name
@@ -155,7 +155,8 @@ def full_test(x, y, buy_date, buy_open, name):
     return m_report, m
 
 
-def split_test(x, y, low_buy_dates, up_buy_dates, low_buy_opens, up_buy_opens, name):
+def split_test(x, y, low_buy_dates, up_buy_dates, low_buy_opens, up_buy_opens,
+               name):
     """
     对按照上涨市/下跌市拆分后的市场测试    
 
@@ -175,28 +176,32 @@ def split_test(x, y, low_buy_dates, up_buy_dates, low_buy_opens, up_buy_opens, n
     """
     x.loc[(x['prev_market'] == -1) &
           (x['nextday'].isin(low_buy_dates)), 'buy'] = 1
-    x.loc[(x['prev_market'] == 1) & (
-        x['nextday'].isin(up_buy_dates)), 'buy'] = 1
+    x.loc[(x['prev_market'] == 1) &
+          (x['nextday'].isin(up_buy_dates)), 'buy'] = 1
     x.loc[(x['prev_market'] == -1) &
           (~x['nextday'].isin(low_buy_dates)), 'sell'] = 1
-    x.loc[(x['prev_market'] == 1) & (
-        ~x['nextday'].isin(up_buy_dates)), 'sell'] = 1
+    x.loc[(x['prev_market'] == 1) &
+          (~x['nextday'].isin(up_buy_dates)), 'sell'] = 1
 
     def buy_func(index, row, data):
         if row['market'] == -1:
             # 下跌市
-            return row['open'] if row['weekday'] in low_buy_opens else row['close']
+            return row['open'] if row['weekday'] in low_buy_opens else row[
+                'close']
         if row['market'] == 1:
             # 上涨市
-            return row['open'] if row['weekday'] in up_buy_opens else row['close']
+            return row['open'] if row['weekday'] in up_buy_opens else row[
+                'close']
 
     def sell_func(index, row, data):
         if row['market'] == -1:
             # 下跌市
-            return row['close'] if row['weekday'] in low_buy_opens else row['open']
+            return row['close'] if row['weekday'] in low_buy_opens else row[
+                'open']
         if row['market'] == 1:
             # 上涨市
-            return row['close'] if row['weekday'] in up_buy_opens else row['open']
+            return row['close'] if row['weekday'] in up_buy_opens else row[
+                'open']
 
     split = backtest(x,
                      benchmark_pd=y,
@@ -208,8 +213,8 @@ def split_test(x, y, low_buy_dates, up_buy_dates, low_buy_opens, up_buy_opens, n
                      sell_price_func=sell_func)
 
     split_report = split.report()[[
-        '基准浮动盈亏(基准最后收盘/基准最先开盘)', '浮动盈亏(结算价值/初始资金)', '盈利次数', '亏损次数', '未结束交易购买金额',
-        '未结束交易当前价值'
+        '基准浮动盈亏(基准最后收盘/基准最先开盘)', '浮动盈亏(结算价值/初始资金)', '盈利次数', '亏损次数',
+        '未结束交易购买金额', '未结束交易当前价值'
     ]].append(split.stats()[['基准最大回撤', '策略最大回撤']]).to_frame().T
 
     split_report['name'] = name
@@ -228,22 +233,59 @@ class _A:
         return self.date == other.date and self.ps == other.ps and self.fs == other.fs
 
 
-def MonteCarloTest(full_data, full_benchmark_data, start_date=datetime.date(year=2015,
-                                                                            month=1,
-                                                                            day=1),
-                   end_date=datetime.date(year=2019,
-                                          month=12,
-                                          day=31),
-                   ps_min=1, ps_max=3, fs_min=93, fs_max=366, times=100000):
+def _process(a, full_data, full_benchmark_data, reports):
+    x_start = a.date + datetime.timedelta(days=-365 * a.ps)
+    x_end = a.date + datetime.timedelta(days=-1)
+    y_start = a.date
+    y_end = a.date + datetime.timedelta(days=a.fs)
+    data = full_data[x_start:x_end]  #测试集
+    x = full_data[y_start:y_end]  #验证集
+    y = full_benchmark_data[y_start:y_end]  #验证基准集
+    market = calc_full_market(data)
+    buy_dates = calc_full_buy_dates(market)
+    buy_opens = calc_full_buy_opens(market)
+    r, m = full_test(x, y, buy_dates, buy_opens, name='完整')
+    r['x_start'] = x_start
+    r['x_end'] = x_end
+    r['y_start'] = y_start
+    r['y_end'] = y_end
+    r['passyears'] = a.ps
+    r['test_days'] = a.fs
+
+    reports.put(r)
+    market_split = calc_split_market(data)
+    low_buy_dates, up_buy_dates = calc_split_buy_dates(market_split)
+    low_buy_open, up_buy_open = calc_split_buy_opens(market_split)
+    x = full_data[y_start:y_end]
+    y = full_benchmark_data[y_start:y_end]
+    rs, m = split_test(x, y, low_buy_dates, up_buy_dates, low_buy_open,
+                       up_buy_open, '拆分')
+    rs['x_start'] = x_start
+    rs['x_end'] = x_end
+    rs['y_start'] = y_start
+    rs['y_end'] = y_end
+    rs['passyears'] = a.ps
+    rs['test_days'] = a.fs
+    reports.put(rs)
+
+
+def MonteCarloTest(full_data,
+                   full_benchmark_data,
+                   start_date=datetime.date(year=2015, month=1, day=1),
+                   end_date=datetime.date(year=2019, month=12, day=31),
+                   ps_min=1,
+                   ps_max=3,
+                   fs_min=93,
+                   fs_max=366,
+                   times=100000,
+                   multiprocessing=False):
     """
     蒙特卡洛模拟测试。
-
     从`start_date`~`end_date`之间随机选择一个日期，向前推`ps_min`~`ps_max`年（随机选择）作为测算数据，
     向后推`fs_min`~`fs_max`天(随机选择）作为验证数据。
     根据测算数据计算买入/卖出标准(测算方式参见calc_full_market,calc_full_buy_dates,calc_full_buy_opens及
     calc_split_market,calc_split_buy_dates,calc_split_buy_opens)，
     对验证数据进行蒙特卡洛模拟测算。*用来模拟测算随机日期是否能够跑赢基准*。
-
     Args:
         full_data (DataFrame): 测试用的完整数据，测试时会根据随机选择出的时间段再进行筛选。
         full_benchmark_data (DataFrame): 基准的完整数据，测试时会根据随机选择出的时间段再进行筛选。
@@ -254,54 +296,55 @@ def MonteCarloTest(full_data, full_benchmark_data, start_date=datetime.date(year
         fs_min (int): 随机选择以后几年的数据作为验证数据的随机选择开始值。默认为93。
         fs_max (int): 随机选择以后几年的数据作为验证数据的随机选择截止值。默认为366。
         times (int): 测试次数。默认为100000。
+        multiprocessing (boolean): 是否采用多进程方式处理。默认为False。
     """
     fake = Faker()
-    reports = []
-    ds = []
-    for i in tqdm(range(times)):
-        date = fake.date_between(start_date=start_date,
-                                 end_date=end_date)
+
+    ds = []  #开始时间，回测几年，验证几天的集合
+
+    while len(ds) < times:
+        date = fake.date_between(start_date=start_date, end_date=end_date)
         ps = fake.pyint(min_value=ps_min, max_value=ps_max)  # 过去几年的数据作为测算数据
         fs = fake.pyint(min_value=fs_min, max_value=fs_max)
         d = _A(date, ps, fs)
         if d in ds:
             continue
         ds.append(d)
-        x_start = date + datetime.timedelta(days=-365 * ps)
-        x_end = date + datetime.timedelta(days=-1)
-        y_start = date
-        y_end = date + datetime.timedelta(days=fs)
-        data = full_data[x_start:x_end]
-        x = full_data[y_start:y_end]
-        y = full_benchmark_data[y_start:y_end]
-        market = calc_full_market(data)
-        buy_dates = calc_full_buy_dates(market)
-        buy_opens = calc_full_buy_opens(market)
-        r, m = full_test(x, y, buy_dates, buy_opens, name='完整')
-        r['x_start'] = x_start
-        r['x_end'] = x_end
-        r['y_start'] = y_start
-        r['y_end'] = y_end
-        r['passyears'] = ps
-        r['test_days'] = fs
-        reports.append(r)
-        market_split = calc_split_market(data)
-        low_buy_dates, up_buy_dates = calc_split_buy_dates(market_split)
-        low_buy_open, up_buy_open = calc_split_buy_opens(market_split)
-        x = full_data[y_start:y_end]
-        y = full_benchmark_data[y_start:y_end]
-        rs, m = split_test(x, y, low_buy_dates, up_buy_dates, low_buy_open,
-                           up_buy_open, '拆分')
-        rs['x_start'] = x_start
-        rs['x_end'] = x_end
-        rs['y_start'] = y_start
-        rs['y_end'] = y_end
-        rs['passyears'] = ps
-        rs['test_days'] = fs
-        reports.append(rs)
-    from IPython.display import clear_output
-    clear_output(wait=True)
-    report = pd.concat(reports).rename(columns={
+
+    if multiprocessing:
+        import multiprocessing as mp
+        import os
+        m = mp.Manager()
+        reports = m.Queue()
+        pbar = tqdm(total=len(ds))
+
+        def _update_bar(a):
+            pbar.update(1)
+
+        p = mp.Pool(4)
+        for d in ds:
+            p.apply_async(_process,
+                          args=(
+                              d,
+                              full_data,
+                              full_benchmark_data,
+                              reports,
+                          ),
+                          callback=_update_bar)
+        p.close()
+        p.join()
+        pbar.close()
+    else:
+        import queue
+        reports = queue.Queue()
+        for d in tqdm(ds):
+            _process(d, full_data, full_benchmark_data, reports)
+
+    report_arr = []
+    while reports.qsize() > 0:
+        report_arr.append(reports.get())
+
+    report = pd.concat(report_arr).rename(columns={
         '基准浮动盈亏(基准最后收盘/基准最先开盘)': '基准浮动盈亏',
         '浮动盈亏(结算价值/初始资金)': '策略浮动盈亏'
     })
