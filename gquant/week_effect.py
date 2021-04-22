@@ -300,17 +300,14 @@ def MonteCarloTest(full_data,
     """
     fake = Faker()
 
-    ds = []  # 开始时间，回测几年，验证几天的集合
+    ds = set()  # 开始时间，回测几年，验证几天的集合
 
     pbar = tqdm(total=times, desc='准备数据')
     while len(ds) < times:
         date = fake.date_between(start_date=start_date, end_date=end_date)
         ps = fake.pyint(min_value=ps_min, max_value=ps_max)  # 过去几年的数据作为测算数据
         fs = fake.pyint(min_value=fs_min, max_value=fs_max)
-        d = _A(date, ps, fs)
-        if d in ds:
-            continue
-        ds.append(d)
+        ds.add(_A(date, ps, fs))
         pbar.update(1)
     pbar.close()
 
@@ -344,8 +341,11 @@ def MonteCarloTest(full_data,
             _process(d, full_data, full_benchmark_data, reports)
 
     report_arr = []
+    pbar = tqdm(total=reports.qsize(), desc='合并报表')
     while reports.qsize() > 0:
         report_arr.append(reports.get())
+        pbar.update(1)
+    pbar.close()
 
     report = pd.concat(report_arr).rename(columns={
         '基准浮动盈亏(基准最后收盘/基准最先开盘)': '基准浮动盈亏',
