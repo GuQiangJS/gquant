@@ -232,6 +232,12 @@ class _A:
     def __eq__(self, other):
         return self.date == other.date and self.ps == other.ps and self.fs == other.fs
 
+    def __hash__(self):
+        return hash(self.date) ^ hash(self.ps) ^ hash(self.fs)
+
+    def __str__(self):
+        return 'Date:{}-PS:{}-FS:{}'.format(str(self.date), str(self.ps), str(self.fs))
+
 
 def _process(a, full_data, full_benchmark_data, reports):
     x_start = a.date + datetime.timedelta(days=-365 * a.ps)
