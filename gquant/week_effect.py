@@ -238,9 +238,9 @@ def _process(a, full_data, full_benchmark_data, reports):
     x_end = a.date + datetime.timedelta(days=-1)
     y_start = a.date
     y_end = a.date + datetime.timedelta(days=a.fs)
-    data = full_data[x_start:x_end]  #测试集
-    x = full_data[y_start:y_end]  #验证集
-    y = full_benchmark_data[y_start:y_end]  #验证基准集
+    data = full_data[x_start:x_end]  # 测试集
+    x = full_data[y_start:y_end]  # 验证集
+    y = full_benchmark_data[y_start:y_end]  # 验证基准集
     market = calc_full_market(data)
     buy_dates = calc_full_buy_dates(market)
     buy_opens = calc_full_buy_opens(market)
@@ -300,8 +300,9 @@ def MonteCarloTest(full_data,
     """
     fake = Faker()
 
-    ds = []  #开始时间，回测几年，验证几天的集合
+    ds = []  # 开始时间，回测几年，验证几天的集合
 
+    pbar = tqdm(total=times, desc='准备数据')
     while len(ds) < times:
         date = fake.date_between(start_date=start_date, end_date=end_date)
         ps = fake.pyint(min_value=ps_min, max_value=ps_max)  # 过去几年的数据作为测算数据
@@ -310,13 +311,15 @@ def MonteCarloTest(full_data,
         if d in ds:
             continue
         ds.append(d)
+        pbar.update(1)
+    pbar.close()
 
     if multiprocessing:
         import multiprocessing as mp
         import os
         m = mp.Manager()
         reports = m.Queue()
-        pbar = tqdm(total=len(ds))
+        pbar = tqdm(total=len(ds), desc='处理中')
 
         def _update_bar(a):
             pbar.update(1)
