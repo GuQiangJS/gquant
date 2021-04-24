@@ -78,9 +78,9 @@ def backtest(data, init_cash=10000, **kwargs):
                                          'sell_amount': hold_amount, 'sell_comm': sell_com, 'sell_cash': cash, 'sell_funds': fund}, index=[0]))
             cash = cash+sell_price*hold_amount-sell_com
             hold_amount = 0
-        if pBar:
+        if pbar:
             pbar.update(1)
-    if pBar:
+    if pbar:
         pbar.close()
 
     def _create_empty_buydf():
