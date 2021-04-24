@@ -1,7 +1,7 @@
 import logging
 import pandas as pd
 import matplotlib.pyplot as plt
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import numpy as np
 from empyrical import stats
 
@@ -24,6 +24,7 @@ def backtest(data, init_cash=10000, **kwargs):
         sell_comm: 卖出时佣金比率。默认为0.00025(万2.5)。
         sell_limit_comm: 卖出时最低佣金金额。默认为5。
         benchmark_pd: 基准数据。默认为data。
+        show_progressBar: 是否显示tqdm进度条。默认为False。
     Returns:
         Metrics对象。
     """
@@ -43,7 +44,9 @@ def backtest(data, init_cash=10000, **kwargs):
     benchmark_pd = kwargs.pop('benchmark_pd', data)
     buy_price_func = kwargs.pop('buy_price_func', None)
     sell_price_func = kwargs.pop('sell_price_func', None)
-    for index, row in tqdm(data.iterrows()):
+    pbar = tqdm(total=data.shape[0]) if kwargs.pop(
+        "show_progressBar", False) else None
+    for index, row in data.iterrows():
         if hold_amount == 0 and row['buy'] == 1:
             if buy_price_func != None:
                 buy_price = buy_price_func(index, row, data)
@@ -75,6 +78,10 @@ def backtest(data, init_cash=10000, **kwargs):
                                          'sell_amount': hold_amount, 'sell_comm': sell_com, 'sell_cash': cash, 'sell_funds': fund}, index=[0]))
             cash = cash+sell_price*hold_amount-sell_com
             hold_amount = 0
+        if pBar:
+            pbar.update(1)
+    if pBar:
+        pbar.close()
 
     def _create_empty_buydf():
         return pd.DataFrame({'buy_date': [], 'buy_price': [], 'buy_amount': [], 'buy_comm': [], 'buy_cash': [], 'buy_funds': []})
