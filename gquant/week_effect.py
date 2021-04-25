@@ -174,14 +174,14 @@ def split_test(x, y, low_buy_dates, up_buy_dates, low_buy_opens, up_buy_opens,
     1. 需要取1.3日数据行上的`prev_market`来拿到1.2日的market数据。也只有那1.2的market数据才是合理的。
     2. 判断1.4日是否在可买区间内，如果在可买区间内，再将1.3日标记可买。
     """
-    x.loc[(x['prev_market'] == -1) &
-          (x['nextday'].isin(low_buy_dates)), 'buy'] = 1
-    x.loc[(x['prev_market'] == 1) &
-          (x['nextday'].isin(up_buy_dates)), 'buy'] = 1
-    x.loc[(x['prev_market'] == -1) &
-          (~x['nextday'].isin(low_buy_dates)), 'sell'] = 1
-    x.loc[(x['prev_market'] == 1) &
-          (~x['nextday'].isin(up_buy_dates)), 'sell'] = 1
+    x.loc[(x['prev_market'] == -1) & (x['nextday'].isin(low_buy_dates)),
+          'buy'] = 1
+    x.loc[(x['prev_market'] == 1) & (x['nextday'].isin(up_buy_dates)),
+          'buy'] = 1
+    x.loc[(x['prev_market'] == -1) & (~x['nextday'].isin(low_buy_dates)),
+          'sell'] = 1
+    x.loc[(x['prev_market'] == 1) & (~x['nextday'].isin(up_buy_dates)),
+          'sell'] = 1
 
     def buy_func(index, row, data):
         if row['market'] == -1:
@@ -236,7 +236,8 @@ class _A:
         return hash(self.date) ^ hash(self.ps) ^ hash(self.fs)
 
     def __str__(self):
-        return 'Date:{}-PS:{}-FS:{}'.format(str(self.date), str(self.ps), str(self.fs))
+        return 'Date:{}-PS:{}-FS:{}'.format(str(self.date), str(self.ps),
+                                            str(self.fs))
 
 
 def _process(a, full_data, full_benchmark_data, reports):
@@ -284,7 +285,8 @@ def MonteCarloTest(full_data,
                    fs_min=93,
                    fs_max=366,
                    times=100000,
-                   multiprocessing=False):
+                   multiprocessing=False,
+                   multiprocessing_kws={}):
     """
     蒙特卡洛模拟测试。
     从`start_date`~`end_date`之间随机选择一个日期，向前推`ps_min`~`ps_max`年（随机选择）作为测算数据，
@@ -303,6 +305,7 @@ def MonteCarloTest(full_data,
         fs_max (int): 随机选择以后几年的数据作为验证数据的随机选择截止值。默认为366。
         times (int): 测试次数。默认为100000。
         multiprocessing (boolean): 是否采用多进程方式处理。默认为False。
+        multiprocessing_kws (dict): 多线程时的参数字典。
     """
     fake = Faker()
 
@@ -327,7 +330,7 @@ def MonteCarloTest(full_data,
         def _update_bar(a):
             pbar.update(1)
 
-        p = mp.Pool(4)
+        p = mp.Pool(**multiprocessing_kws)
         while len(ds) > 0:
             p.apply_async(_process,
                           args=(
