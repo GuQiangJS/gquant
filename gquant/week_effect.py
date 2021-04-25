@@ -343,8 +343,11 @@ def MonteCarloTest(full_data,
     else:
         import queue
         reports = queue.Queue()
-        for d in tqdm(ds):
-            _process(d, full_data, full_benchmark_data, reports)
+        pbar = tqdm(total=len(ds), desc='处理中')
+        while len(ds) > 0:
+            _process(ds.pop(), full_data, full_benchmark_data, reports)
+            pbar.update(1)
+        pbar.close()
 
     report_arr = []
     pbar = tqdm(total=reports.qsize(), desc='合并报表')
