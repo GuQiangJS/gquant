@@ -328,10 +328,10 @@ def MonteCarloTest(full_data,
             pbar.update(1)
 
         p = mp.Pool(4)
-        for d in ds:
+        while len(ds) > 0:
             p.apply_async(_process,
                           args=(
-                              d,
+                              ds.pop(),
                               full_data,
                               full_benchmark_data,
                               reports,
