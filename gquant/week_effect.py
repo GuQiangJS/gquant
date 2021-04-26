@@ -240,40 +240,6 @@ class _A:
                                             str(self.fs))
 
 
-def _process(a, full_data, full_benchmark_data, reports):
-    x_start = a.date + datetime.timedelta(days=-365 * a.ps)
-    x_end = a.date + datetime.timedelta(days=-1)
-    y_start = a.date
-    y_end = a.date + datetime.timedelta(days=a.fs)
-    data = full_data[x_start:x_end]  # 测试集
-    x = full_data[y_start:y_end]  # 验证集
-    y = full_benchmark_data[y_start:y_end]  # 验证基准集
-    market = calc_full_market(data)
-    buy_dates = calc_full_buy_dates(market)
-    buy_opens = calc_full_buy_opens(market)
-    r, m = full_test(x, y, buy_dates, buy_opens, name='完整')
-    r['x_start'] = x_start
-    r['x_end'] = x_end
-    r['y_start'] = y_start
-    r['y_end'] = y_end
-    r['passyears'] = a.ps
-    r['test_days'] = a.fs
-
-    reports.put(r)
-    market_split = calc_split_market(data)
-    low_buy_dates, up_buy_dates = calc_split_buy_dates(market_split)
-    low_buy_open, up_buy_open = calc_split_buy_opens(market_split)
-    x = full_data[y_start:y_end]
-    y = full_benchmark_data[y_start:y_end]
-    rs, m = split_test(x, y, low_buy_dates, up_buy_dates, low_buy_open,
-                       up_buy_open, '拆分')
-    rs['x_start'] = x_start
-    rs['x_end'] = x_end
-    rs['y_start'] = y_start
-    rs['y_end'] = y_end
-    rs['passyears'] = a.ps
-    rs['test_days'] = a.fs
-    reports.put(rs)
 
 
 def MonteCarloTest(full_data,
@@ -305,50 +271,82 @@ def MonteCarloTest(full_data,
         fs_max (int): 随机选择以后几年的数据作为验证数据的随机选择截止值。默认为366。
         times (int): 测试次数。默认为100000。
         multiprocessing (boolean): 是否采用多进程方式处理。默认为False。
-        multiprocessing_kws (dict): 多线程时的参数字典。
+        processPoolExecutor_kws (dict): 多线程时的参数字典。
     """
     fake = Faker()
 
-    ds = set()  # 开始时间，回测几年，验证几天的集合
+    ds = []  # 开始时间，回测几年，验证几天的集合
 
     pbar = tqdm(total=times, desc='准备数据')
     while len(ds) < times:
         date = fake.date_between(start_date=start_date, end_date=end_date)
         ps = fake.pyint(min_value=ps_min, max_value=ps_max)  # 过去几年的数据作为测算数据
         fs = fake.pyint(min_value=fs_min, max_value=fs_max)
-        ds.add(_A(date, ps, fs))
+        d=_A(date, ps, fs)
+        if d in ds:
+            continue
+        ds.append(d)
         pbar.update(1)
     pbar.close()
 
+    def _process(a):
+        x_start = a.date + datetime.timedelta(days=-365 * a.ps)
+        x_end = a.date + datetime.timedelta(days=-1)
+        y_start = a.date
+        y_end = a.date + datetime.timedelta(days=a.fs)
+        data = full_data[x_start:x_end]  # 测试集
+        x = full_data[y_start:y_end]  # 验证集
+        y = full_benchmark_data[y_start:y_end]  # 验证基准集
+        market = calc_full_market(data)
+        buy_dates = calc_full_buy_dates(market)
+        buy_opens = calc_full_buy_opens(market)
+        r, m = full_test(x, y, buy_dates, buy_opens, name='完整')
+        r['x_start'] = x_start
+        r['x_end'] = x_end
+        r['y_start'] = y_start
+        r['y_end'] = y_end
+        r['passyears'] = a.ps
+        r['test_days'] = a.fs
+
+        market_split = calc_split_market(data)
+        low_buy_dates, up_buy_dates = calc_split_buy_dates(market_split)
+        low_buy_open, up_buy_open = calc_split_buy_opens(market_split)
+        x = full_data[y_start:y_end]
+        y = full_benchmark_data[y_start:y_end]
+        rs, m = split_test(x, y, low_buy_dates, up_buy_dates, low_buy_open,
+                        up_buy_open, '拆分')
+        rs['x_start'] = x_start
+        rs['x_end'] = x_end
+        rs['y_start'] = y_start
+        rs['y_end'] = y_end
+        rs['passyears'] = a.ps
+        rs['test_days'] = a.fs
+        return [r,rs]
+      
+    import queue
+    reports = queue.Queue()  
     if multiprocessing:
-        import multiprocessing as mp
-        import os
-        m = mp.Manager()
-        reports = m.Queue()
+        import concurrent.futures
         pbar = tqdm(total=len(ds), desc='处理中')
-
-        def _update_bar(a):
-            pbar.update(1)
-
-        p = mp.Pool(**multiprocessing_kws)
-        while len(ds) > 0:
-            p.apply_async(_process,
-                          args=(
-                              ds.pop(),
-                              full_data,
-                              full_benchmark_data,
-                              reports,
-                          ),
-                          callback=_update_bar)
-        p.close()
-        p.join()
+        with concurrent.futures.ProcessPoolExecutor(**processPoolExecutor_kws) as executor:
+            future_to_url = [executor.submit(_process, d) for d in ds]
+            del ds
+            for future in concurrent.futures.as_completed(future_to_url):
+                prime=future.result()
+                reports.put(prime[0])
+                reports.put(prime[1])
+                future_to_url.remove(future)
+                del future
+                del prime
+                pbar.update()
+        pbar.refresh()
         pbar.close()
     else:
-        import queue
-        reports = queue.Queue()
         pbar = tqdm(total=len(ds), desc='处理中')
         while len(ds) > 0:
-            _process(ds.pop(), full_data, full_benchmark_data, reports)
+            prime=_process(ds.pop())
+            reports.put(prime[0])
+            reports.put(prime[1])
             pbar.update(1)
         pbar.close()
 
