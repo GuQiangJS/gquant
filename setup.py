@@ -5,7 +5,7 @@ with open("README.md", "r", encoding='utf-8') as fh:
 
 setuptools.setup(
     name="gquant",  # Replace with your own username
-    version="0.0.34",
+    version="0.0.35",
     author='GuQiangJS',
     author_email='guqiangjs@gmail.com',
     long_description=long_description,

@@ -241,6 +241,54 @@ class _A:
 
 
 
+def _process(a,full_data,full_benchmark_data):
+    x_start = a.date + datetime.timedelta(days=-365 * a.ps)
+    x_end = a.date + datetime.timedelta(days=-1)
+    y_start = a.date
+    y_end = a.date + datetime.timedelta(days=a.fs)
+    data = full_data[x_start:x_end]  # 测试集
+    x = full_data[y_start:y_end]  # 验证集
+    y = full_benchmark_data[y_start:y_end]  # 验证基准集
+    market = calc_full_market(data)
+    buy_dates = calc_full_buy_dates(market)
+    buy_opens = calc_full_buy_opens(market)
+    r, m = full_test(x, y, buy_dates, buy_opens, name='完整')
+    r['x_start'] = x_start
+    r['x_end'] = x_end
+    r['y_start'] = y_start
+    r['y_end'] = y_end
+    r['passyears'] = a.ps
+    r['test_days'] = a.fs
+
+    market_split = calc_split_market(data)
+    low_buy_dates, up_buy_dates = calc_split_buy_dates(market_split)
+    low_buy_open, up_buy_open = calc_split_buy_opens(market_split)
+    x = full_data[y_start:y_end]
+    y = full_benchmark_data[y_start:y_end]
+    rs, m = split_test(x, y, low_buy_dates, up_buy_dates, low_buy_open,
+                        up_buy_open, '拆分')
+    rs['x_start'] = x_start
+    rs['x_end'] = x_end
+    rs['y_start'] = y_start
+    rs['y_end'] = y_end
+    rs['passyears'] = a.ps
+    rs['test_days'] = a.fs
+
+    del data
+    del x
+    del y
+    del market
+    del buy_dates
+    del buy_opens
+    del m
+    del market_split
+    del low_buy_dates
+    del low_buy_open
+    del up_buy_dates
+    del up_buy_open
+
+    return [r,rs]
+
 
 def MonteCarloTest(full_data,
                    full_benchmark_data,
@@ -288,41 +336,6 @@ def MonteCarloTest(full_data,
         ds.append(d)
         pbar.update(1)
     pbar.close()
-
-    def _process(a):
-        print(a)
-        x_start = a.date + datetime.timedelta(days=-365 * a.ps)
-        x_end = a.date + datetime.timedelta(days=-1)
-        y_start = a.date
-        y_end = a.date + datetime.timedelta(days=a.fs)
-        data = full_data[x_start:x_end]  # 测试集
-        x = full_data[y_start:y_end]  # 验证集
-        y = full_benchmark_data[y_start:y_end]  # 验证基准集
-        market = calc_full_market(data)
-        buy_dates = calc_full_buy_dates(market)
-        buy_opens = calc_full_buy_opens(market)
-        r, m = full_test(x, y, buy_dates, buy_opens, name='完整')
-        r['x_start'] = x_start
-        r['x_end'] = x_end
-        r['y_start'] = y_start
-        r['y_end'] = y_end
-        r['passyears'] = a.ps
-        r['test_days'] = a.fs
-
-        market_split = calc_split_market(data)
-        low_buy_dates, up_buy_dates = calc_split_buy_dates(market_split)
-        low_buy_open, up_buy_open = calc_split_buy_opens(market_split)
-        x = full_data[y_start:y_end]
-        y = full_benchmark_data[y_start:y_end]
-        rs, m = split_test(x, y, low_buy_dates, up_buy_dates, low_buy_open,
-                        up_buy_open, '拆分')
-        rs['x_start'] = x_start
-        rs['x_end'] = x_end
-        rs['y_start'] = y_start
-        rs['y_end'] = y_end
-        rs['passyears'] = a.ps
-        rs['test_days'] = a.fs
-        return [r,rs]
       
     import queue
     reports = queue.Queue()  
@@ -330,7 +343,7 @@ def MonteCarloTest(full_data,
         import concurrent.futures
         pbar = tqdm(total=len(ds), desc='处理中')
         with concurrent.futures.ProcessPoolExecutor(**processPoolExecutor_kws) as executor:
-            future_to_url = [executor.submit(_process, d) for d in ds]
+            future_to_url = [executor.submit(_process, d,full_data,full_benchmark_data) for d in ds]
             # del ds
             for future in concurrent.futures.as_completed(future_to_url):
                 prime=future.result()
@@ -345,7 +358,7 @@ def MonteCarloTest(full_data,
     else:
         pbar = tqdm(total=len(ds), desc='处理中')
         while len(ds) > 0:
-            prime=_process(ds.pop())
+            prime=_process(ds.pop(),full_data,full_benchmark_data)
             reports.put(prime[0])
             reports.put(prime[1])
             pbar.update(1)
