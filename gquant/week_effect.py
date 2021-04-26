@@ -350,8 +350,8 @@ def MonteCarloTest(full_data,
                 reports.put(prime[0])
                 reports.put(prime[1])
                 future_to_url.remove(future)
-                # del future
-                # del prime
+                del future
+                del prime
                 pbar.update()
         pbar.refresh()
         pbar.close()
