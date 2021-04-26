@@ -252,7 +252,7 @@ def MonteCarloTest(full_data,
                    fs_max=366,
                    times=100000,
                    multiprocessing=False,
-                   multiprocessing_kws={}):
+                   processPoolExecutor_kws={}):
     """
     蒙特卡洛模拟测试。
     从`start_date`~`end_date`之间随机选择一个日期，向前推`ps_min`~`ps_max`年（随机选择）作为测算数据，
