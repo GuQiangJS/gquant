@@ -290,6 +290,7 @@ def MonteCarloTest(full_data,
     pbar.close()
 
     def _process(a):
+        print(a)
         x_start = a.date + datetime.timedelta(days=-365 * a.ps)
         x_end = a.date + datetime.timedelta(days=-1)
         y_start = a.date
