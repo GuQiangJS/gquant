@@ -330,14 +330,14 @@ def MonteCarloTest(full_data,
         pbar = tqdm(total=len(ds), desc='处理中')
         with concurrent.futures.ProcessPoolExecutor(**processPoolExecutor_kws) as executor:
             future_to_url = [executor.submit(_process, d) for d in ds]
-            del ds
+            # del ds
             for future in concurrent.futures.as_completed(future_to_url):
                 prime=future.result()
                 reports.put(prime[0])
                 reports.put(prime[1])
                 future_to_url.remove(future)
-                del future
-                del prime
+                # del future
+                # del prime
                 pbar.update()
         pbar.refresh()
         pbar.close()
